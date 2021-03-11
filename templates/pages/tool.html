@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>执行脚本</title>
+</head>
+<body>
+<h2>选择脚本</h2>
+<form method="post" action="">
+    {% csrf_token %}
+<label class="radio-inline">
+  <input type="radio" name="inlineRadioOptions" id="inlineRadio1" value="1"> 1
+</label>
+<label class="radio-inline">
+  <input type="radio" name="inlineRadioOptions" id="inlineRadio2" value="2"> 2
+</label>
+<label class="radio-inline">
+  <input type="radio" name="inlineRadioOptions" id="inlineRadio3" value="3"> 3
+</label>
+      <button type="submit" class="btn btn-default">Submit</button>
+</form>
+<p>当前状态:{{ state }}</p>
+<p>提示信息:{{ message }}</p>
+</body>
+</html>

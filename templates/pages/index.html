@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}首页{% endblock title %}
+
+
+{% block content %}
+
+<h1>这是主页面</h1>
+
+    <h4>栅格布局</h4>
+<div class="row">
+  <div class="col-md-1">.col-md-1</div>
+  <div class="col-md-1">.col-md-1</div>
+  <div class="col-md-1">.col-md-1</div>
+  <div class="col-md-1">.col-md-1</div>
+  <div class="col-md-1">.col-md-1</div>
+  <div class="col-md-1">.col-md-1</div>
+  <div class="col-md-1">.col-md-1</div>
+  <div class="col-md-1">.col-md-1</div>
+  <div class="col-md-1">.col-md-1</div>
+  <div class="col-md-1">.col-md-1</div>
+  <div class="col-md-1">.col-md-1</div>
+  <div class="col-md-1">.col-md-1</div>
+</div>
+<div class="row">
+  <div class="col-md-8">.col-md-8</div>
+  <div class="col-md-4">.col-md-4</div>
+</div>
+<div class="row">
+  <div class="col-md-4">.col-md-4</div>
+  <div class="col-md-4">.col-md-4</div>
+  <div class="col-md-4">.col-md-4</div>
+</div>
+<div class="row">
+  <div class="col-md-6">.col-md-6</div>
+  <div class="col-md-6">.col-md-6</div>
+</div>
+
+<h4>表单</h4>
+<h6>当前用户ID:{{ formUserID }}</h6>
+<h6>当前用户名:{{ formUserName }}</h6>
+<h6>提示信息：{{ message }}</h6>
+
+    <form method="post" action="">
+    {% csrf_token %}
+  <div class="form-group">
+    <label for="exampleInputEmail1">用户ID</label>
+    <input  class="form-control" name="formUserID" placeholder="id">
+  </div>
+  <div class="form-group">
+    <label for="exampleInputPassword1">用户名</label>
+    <input  class="form-control" name="formUserName" placeholder="name">
+  </div>
+  <button type="submit" class="btn btn-default">Submit</button>
+</form>
+
+<h4>执行脚本</h4>
+
+
+{% endblock content %}
