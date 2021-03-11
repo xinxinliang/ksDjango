@@ -138,3 +138,308 @@ if __name__ == "__main__":
 4. 接下来，对存入数据库的用户进行页面展示，这段代码先添加到django中。
 
 > 数据库：有点不明白用户与关注主播，点赞视频之间的主键关系，去看看书再来继续django
+
+#### 接下来
+
+> 看来之前model相关的知识，知道主键怎么用。现在有个问题用户界面的相片没有处理。
+
+1. 我观察了一下，两个地址出现的作品数量不一样
+
+- https://live.kuaishou.com/profile/3x4t9upcrqpvpzk，live开头出现的用户页面会出现图片，也就是所有作品
+- https://video.kuaishou.com/profile/3x4t9upcrqpvpzk，video开头的不会出现图片，视频也出现得不完整。
+- 但是我详细的看请求的接口是以video开头的，可能是cookie不同
+
+2. 我再**cookie字段中添加了Max-Age=86400**这个属性，测试跑代码是成功的，不知道有没有效果
+3. 上面的那句话**是错的，确实不同**，开头是live，结尾是快手ID号，估计这种难度大一些，还是尝试一下。
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210311191256.png)
+
+5. **成功**，我填写相应的信息，请求live界面想video一样成功
+
+```
+# -*- coding: utf-8 -*-
+
+#请求mp4地址
+import requests
+import json
+URL = "https://live.kuaishou.com/m_graphql"
+headers = {
+    "accept":"*/*",
+    "Content-Length":"<calculated when request is sent>",
+    "Accept-Encoding": "gzip, deflate",
+    "Connection": "keep-alive",
+    "content-type": "application/json",
+    "Cookie": r'clientid=3; did=web_ec874916e390b9741609686125a0452e; didv=1613879531823; client_key=65890b29; kpn=GAME_ZONE; userId=427400950; kuaishou.live.bfb1s=7206d814e5c089a58c910ed8bf52ace5; userId=427400950; kuaishou.live.web_st=ChRrdWFpc2hvdS5saXZlLndlYi5zdBKgAYm9VZdJaOIjsJDqPoO-yLNw4ZuZul234nekkYMdMsNjIq-i5skiOlVnLhFSPv5PTbrQ45yitiFEkQMGUCDxpsbRcsDpHI0CDZfflQeD9Z14cuQ8x2YJORv-1Pz8JM4-_qmBhAxjVHJ8OSs4kMHRKpCvZja6UUYbXLunFhKT5fyhx1HViPCmuVjBcsSxZEtEpvponSa3DjtkZU2KQ3M9pUoaEm-zwBmcbUA4lm5ejQnh9kVjySIgjJsh3xaj6ckXgLNLF3iPjKs6sC7d1lWqH0SZbWeHTREoBTAB; kuaishou.live.web_ph=ed6156f0bc66780438d593dfc3b3f8fa6f63',
+    "Host": "live.kuaishou.com",
+    "Origin": "https://live.kuaishou.com",
+    "Referer": "https://live.kuaishou.com/profile/JTYYA13-",
+    "User-Agent": "PostmanRuntime/7.26.8"
+}
+payload = {"operationName":"publicFeedsQuery","variables":{"principalId":"JTYYA13-","pcursor":"1.602058185281E12","count":24},"query":"query publicFeedsQuery($principalId: String, $pcursor: String, $count: Int) {\n  publicFeeds(principalId: $principalId, pcursor: $pcursor, count: $count) {\n    pcursor\n    live {\n      user {\n        id\n        avatar\n        name\n        __typename\n      }\n      watchingCount\n      poster\n      coverUrl\n      caption\n      id\n      playUrls {\n        quality\n        url\n        __typename\n      }\n      quality\n      gameInfo {\n        category\n        name\n        pubgSurvival\n        type\n        kingHero\n        __typename\n      }\n      hasRedPack\n      liveGuess\n      expTag\n      __typename\n    }\n    list {\n      id\n      thumbnailUrl\n      poster\n      workType\n      type\n      useVideoPlayer\n      imgUrls\n      imgSizes\n      magicFace\n      musicName\n      caption\n      location\n      liked\n      onlyFollowerCanComment\n      relativeHeight\n      timestamp\n      width\n      height\n      counts {\n        displayView\n        displayLike\n        displayComment\n        __typename\n      }\n      user {\n        id\n        eid\n        name\n        avatar\n        __typename\n      }\n      expTag\n      isSpherical\n      __typename\n    }\n    __typename\n  }\n}\n"}        
+```
+
+```
+def get_data():
+    res = requests.post(URL, headers=headers, json=payload)
+    res.encoding="utf-8"
+    m_json = res.json()  #字典格式   
+    print(m_json)
+
+get_data()
+```
+
+6. 提取照片信息
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210311192308.png)
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210311192343.png)
+
+- 可以看出以列表形式存储
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210311192416.png)
+
+7. ok,我再把数据库字段和主键创建好，然后把爬虫的代码封装为类，就可以构建网页了
+8. 好吧，我之前获取的是用户id，不是快手id。可以先爬取用户id主页信息，获取快手id，然后再通过快手id爬取全面的视频信息和照片。
+
+#### 爬虫代码封装成类
+
+1. 具体分析了一下详细信息
+
+| 字段              | 内容                    | 备注 |
+| ----------------- | ----------------------- | ---- |
+| animateCoverUrl   | 视频预览的动画          | 0    |
+| **caption**       | 视频文案                | 1    |
+| **coversUrl**     | 封面图片地址            | 1    |
+| **viedoID**       | 视频id                  | 1    |
+| **likeCount**     | 简略点赞数              | 1    |
+| **photoUrl**      | 视频地址，默认第一个cdn | 1    |
+| **realLikeCount** | 详细点赞数              | 1    |
+|                   |                         |      |
+
+
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210311201453.png)
+
+2. 这是我暂时提取数据后的结果,然后再需要循环获取所有
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210311205241.png)
+
+3. 代码写好了，输入cookie和用户id，可以获取全部的视频信息
+
+```
+import requests
+import json
+
+class userdetailSpider():
+    URL = "https://video.kuaishou.com/graphql"
+
+    # header中需要更改cookie和Referer
+    headers = {
+        "accept": "*/*",
+        "Content-Length": "<calculated when request is sent>",
+        "Accept-Encoding": "gzip, deflate",
+        "Connection": "keep-alive",
+        "content-type": "application/json",
+        # 我添加的时间属性Max-Age=8640000
+        "Cookie": r'kpf=PC_WEB; kpn=KUAISHOU_VISION; clientid=3;Max-Age=8640000; did=web_ec874916e390b9741609686125a0452e; didv=1613879531823; client_key=65890b29; userId=427400950; kuaishou.server.web_st=ChZrdWFpc2hvdS5zZXJ2ZXIud2ViLnN0EqABQrFWsr52Mhp5GfcmignSLoddGbbCBCTAkyedrcLkHqxI9IIdilOuxFUWwhS41WnVKwFJ0Win96_M-frAXGNXXDx78d0FjGOylLgeVtcXUGsIkgyxVkopf2IR_Pvps61IaXw1XTHZOdTrwQkDIdwESPDssQTuW9XNIfjJK9e88ZgJYNJI5bK5n38Zm37kl8omE8R8E8ZhL87TgGpaRZq3XRoSTdCMiCqspRXB3AhuFugv61B-IiBO8gZCTy1dvCTjyGg0IEN6MrmkUACDgSB3T2BYkkBQ-SgFMAE; kuaishou.server.web_ph=dfcba445b9b7f619411fdced6b1e61d6f207',
+        "Host": "video.kuaishou.com",
+        "Origin": "https://video.kuaishou.com",
+        "Referer": "https://video.kuaishou.com/profile/3xcidpetejrcagy",
+        "User-Agent": "PostmanRuntime/7.26.8"
+    }
+    # 这里的userID也要更改
+    payload = {"operationName": "visionProfilePhotoList",
+               "variables": {"userId": "3xcidpetejrcagy", "pcursor": "", "page": "profile"},
+               "query": "query visionProfilePhotoList($pcursor: String, $userId: String, $page: String, $webPageArea: String) {\n  visionProfilePhotoList(pcursor: $pcursor, userId: $userId, page: $page, webPageArea: $webPageArea) {\n    result\n    llsid\n    webPageArea\n    feeds {\n      type\n      author {\n        id\n        name\n        following\n        headerUrl\n        headerUrls {\n          cdn\n          url\n          __typename\n        }\n        __typename\n      }\n      tags {\n        type\n        name\n        __typename\n      }\n      photo {\n        id\n        duration\n        caption\n        likeCount\n        realLikeCount\n        coverUrl\n        coverUrls {\n          cdn\n          url\n          __typename\n        }\n        photoUrls {\n          cdn\n          url\n          __typename\n        }\n        photoUrl\n        liked\n        timestamp\n        expTag\n        animatedCoverUrl\n        __typename\n      }\n      canAddComment\n      currentPcursor\n      llsid\n      status\n      __typename\n    }\n    hostName\n    pcursor\n    __typename\n  }\n}\n"}
+
+    def __init__(self,userID,myCookie):
+        userdetailSpider.headers["Referer"] = "https://video.kuaishou.com/profile/"+userID
+        userdetailSpider.payload["variables"]["userId"] = userID
+        userdetailSpider.headers["Cookie"] = myCookie
+
+
+    def get_data(self):
+        #--------------请求页面--------------#
+        try:
+            res = requests.post(userdetailSpider.URL, headers=userdetailSpider.headers, json=userdetailSpider.payload)
+            res.encoding = "utf-8"
+            m_json = res.json()  # 字典格式
+
+            #-------------诗筛选数据-------------#
+            #*******************************************************************#
+            # 这个result参数判断请求是否正确，如果不是1请求失败，后面继续执行会报错，程序结束
+            # print(m_json["data"]["visionProfilePhotoList"]["result"])
+            feeds_list = m_json["data"]["visionProfilePhotoList"]["feeds"]
+
+            # 获取pcursor并且填写到下一次的header中
+            pcursor = m_json["data"]["visionProfilePhotoList"]["pcursor"]
+            userdetailSpider.payload["variables"]["pcursor"] = pcursor
+
+            #-------------具体提取数据----------#写到这里想起了，我应该是通过live获取视频信息
+            result = {}     #信息存储在字典中
+            for feeds in feeds_list:
+                result["caption"] = feeds["photo"]["caption"]
+                result["coversUrl"] = feeds["photo"]["coverUrl"]
+                result["videoID"] = feeds["photo"]["id"]
+                result["videoPath"] = feeds["photo"]["photoUrl"]
+                result["likeCount"] = feeds["photo"]["likeCount"]
+                result["realLikeCount"] = feeds["photo"]["realLikeCount"]
+                print(result)
+                #-----------待会再这里编写存储到数据库的函数--------------
+
+            #print(m_json)
+            #print(feeds_list)
+            print(pcursor)
+
+            if pcursor == "no_more":
+                return 0
+        except:
+            print("页面请求错误，请检查cookie是否过期，id是否正确")
+
+    def start_spider(self):
+        while(1):
+            temp = userdetailSpider.get_data(self)
+            if temp == 0:
+                break
+
+
+
+if __name__ == "__main__":
+    theCookie = "kpf=PC_WEB; kpn=KUAISHOU_VISION; clientid=3; clientid=3;Max-Age=8640000; did=web_ec874916e390b9741609686125a0452e; didv=1613879531823; client_key=65890b29; userId=427400950; kuaishou.server.web_st=ChZrdWFpc2hvdS5zZXJ2ZXIud2ViLnN0EqABQrFWsr52Mhp5GfcmignSLoddGbbCBCTAkyedrcLkHqxI9IIdilOuxFUWwhS41WnVKwFJ0Win96_M-frAXGNXXDx78d0FjGOylLgeVtcXUGsIkgyxVkopf2IR_Pvps61IaXw1XTHZOdTrwQkDIdwESPDssQTuW9XNIfjJK9e88ZgJYNJI5bK5n38Zm37kl8omE8R8E8ZhL87TgGpaRZq3XRoSTdCMiCqspRXB3AhuFugv61B-IiBO8gZCTy1dvCTjyGg0IEN6MrmkUACDgSB3T2BYkkBQ-SgFMAE; kuaishou.server.web_ph=dfcba445b9b7f619411fdced6b1e61d6f207"
+    theUserID = "3xkm67762d5fwzc"
+
+    test = userdetailSpider(theUserID,theCookie)
+    test.start_spider()
+```
+
+#### 再写获取live页面的信息
+
+1. 慢着，我又有个发现，我之前以为是live开头的要用快手id结尾，我把https://video.kuaishou.com/profile/3xcidpetejrcagy·，这个连接的video改为了live，就可以获取详细页面信息，全面的，那么这个函数先不写。
+2. 还是继续写下去把，不好改（筛选信息要重写）。直接live+用户id，因为我发现video+用户id界面提取不到ksID,所以
+3. 这是live开头请求到的数据
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210311222248.png)
+
+- 相册是一个数组
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210311222236.png)
+
+- 这个是视频
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210311222339.png)
+
+4. 写得代码请求数据成功，现在写筛选数据的逻辑
+
+> 我擦，我写着写着发现里面没有视频地址，没有发现联系。
+>
+> https://txmov2.a.yximgs.com/bs2/newWatermark/Mzc5MDA0MzYwMjQ_zh_4.mp4
+
+5. 我再分析了一下，ksID：Nx277777。一共68个作品，video中61个视频，live中7个相册，是对的。我去测试一下别人
+
+> userID：3xcidpetejrcagy，6个相册，60个视频，一共66个做作品，是对头的。（我全都要）
+
+#### 声明：本项目是作为学习使用，如有侵权立刻删除，切勿商用，后果自负
+
+6. 然后viedo爬取视频，live爬取相册，把那个动态图也加上去。
+
+```
+# 输出快手ID和cookie
+class userdetailLiveSpider():
+
+    URL = "https://live.kuaishou.com/m_graphql"
+
+    headers = {
+        "accept": "*/*",
+        "Content-Length": "<calculated when request is sent>",
+        "Accept-Encoding": "gzip, deflate",
+        "Connection": "keep-alive",
+        "content-type": "application/json",
+        # 我添加的时间属性Max-Age=8640000
+        "Cookie": r'clientid=3;Max-Age=8640000; did=web_ec874916e390b9741609686125a0452e; didv=1613879531823; client_key=65890b29; kpn=GAME_ZONE; userId=427400950; kuaishou.live.bfb1s=7206d814e5c089a58c910ed8bf52ace5; userId=427400950; kuaishou.live.web_st=ChRrdWFpc2hvdS5saXZlLndlYi5zdBKgAYm9VZdJaOIjsJDqPoO-yLNw4ZuZul234nekkYMdMsNjIq-i5skiOlVnLhFSPv5PTbrQ45yitiFEkQMGUCDxpsbRcsDpHI0CDZfflQeD9Z14cuQ8x2YJORv-1Pz8JM4-_qmBhAxjVHJ8OSs4kMHRKpCvZja6UUYbXLunFhKT5fyhx1HViPCmuVjBcsSxZEtEpvponSa3DjtkZU2KQ3M9pUoaEm-zwBmcbUA4lm5ejQnh9kVjySIgjJsh3xaj6ckXgLNLF3iPjKs6sC7d1lWqH0SZbWeHTREoBTAB; kuaishou.live.web_ph=ed6156f0bc66780438d593dfc3b3f8fa6f63',
+        "Host": "live.kuaishou.com",
+        "Origin": "https://live.kuaishou.com",
+        "Referer": "https://live.kuaishou.com/profile/LY7452065",
+        "User-Agent": "PostmanRuntime/7.26.8"
+    }
+
+    payload = {"operationName": "publicFeedsQuery",
+               "variables": {"principalId": "JTYYA13-", "pcursor": "", "count": 24},
+               "query": "query publicFeedsQuery($principalId: String, $pcursor: String, $count: Int) {\n  publicFeeds(principalId: $principalId, pcursor: $pcursor, count: $count) {\n    pcursor\n    live {\n      user {\n        id\n        avatar\n        name\n        __typename\n      }\n      watchingCount\n      poster\n      coverUrl\n      caption\n      id\n      playUrls {\n        quality\n        url\n        __typename\n      }\n      quality\n      gameInfo {\n        category\n        name\n        pubgSurvival\n        type\n        kingHero\n        __typename\n      }\n      hasRedPack\n      liveGuess\n      expTag\n      __typename\n    }\n    list {\n      id\n      thumbnailUrl\n      poster\n      workType\n      type\n      useVideoPlayer\n      imgUrls\n      imgSizes\n      magicFace\n      musicName\n      caption\n      location\n      liked\n      onlyFollowerCanComment\n      relativeHeight\n      timestamp\n      width\n      height\n      counts {\n        displayView\n        displayLike\n        displayComment\n        __typename\n      }\n      user {\n        id\n        eid\n        name\n        avatar\n        __typename\n      }\n      expTag\n      isSpherical\n      __typename\n    }\n    __typename\n  }\n}\n"}
+
+    def __init__(self,userId,myCookie):
+        self.headers["Referer"] = "https://live.kuaishou.com/profile/"+userId
+        self.payload["variables"]["principalId"] = userId
+        self.headers["Cookie"] = myCookie
+
+    def get_data(self):
+        try:
+            res = requests.post(self.URL, headers=self.headers, json=self.payload)
+            res.encoding = "utf-8"
+            m_json = res.json()  # 字典格式
+
+            feeds_list = m_json["data"]["publicFeeds"]["list"]
+            pcursor = m_json["data"]["publicFeeds"]["pcursor"]
+            self.payload["variables"]["pcursor"] = pcursor
+            # print(m_json)
+
+            #-------------筛选数据---------------#
+            result = {}
+            for feeds in feeds_list:
+                result["caption"] = feeds["caption"]
+                # 播放量，点赞数，评论数
+                result["displayView"] = feeds["counts"]["displayView"]
+                result["displayLike"] = feeds["counts"]["displayLike"]
+                result["displayComment"] = feeds["counts"]["displayComment"]
+                # 相册，可能为空，可能为列表
+                result["imgUrls"] = feeds["imgUrls"]
+                result["liveID"] = feeds["id"]
+                print(result)
+        except:
+            print("页面请求错误，请检查cookie是否过期，id是否正确")
+if __name__ == "__main__":
+    theCookie = "kpf=PC_WEB; kpn=KUAISHOU_VISION; clientid=3; clientid=3;Max-Age=8640000; did=web_ec874916e390b9741609686125a0452e; didv=1613879531823; client_key=65890b29; userId=427400950; kuaishou.server.web_st=ChZrdWFpc2hvdS5zZXJ2ZXIud2ViLnN0EqABQrFWsr52Mhp5GfcmignSLoddGbbCBCTAkyedrcLkHqxI9IIdilOuxFUWwhS41WnVKwFJ0Win96_M-frAXGNXXDx78d0FjGOylLgeVtcXUGsIkgyxVkopf2IR_Pvps61IaXw1XTHZOdTrwQkDIdwESPDssQTuW9XNIfjJK9e88ZgJYNJI5bK5n38Zm37kl8omE8R8E8ZhL87TgGpaRZq3XRoSTdCMiCqspRXB3AhuFugv61B-IiBO8gZCTy1dvCTjyGg0IEN6MrmkUACDgSB3T2BYkkBQ-SgFMAE; kuaishou.server.web_ph=dfcba445b9b7f619411fdced6b1e61d6f207"
+    theUserID = "3xkm67762d5fwzc"
+
+    test = userdetailLiveSpider(theUserID,theCookie)
+    test.get_data()
+```
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210311230600.png)
+
+7. 然后写一下循环，再合并一下，或重新构建一个展示相册的页面。
+
+> 整合过程中，如果live中的id存在video的视频id，怎说明整合，如果没有就是相册，则添加。
+
+#### 获取用户详细信息
+
+1. userTitle表存储用户id和name以及创建时间，之前打算在创建userDetail，把userTitle当作主键，但其不是一对多的关系，还是增加字段。
+
+> 好像可以在model中添加执行动作的函数。
+>
+> 添加视频信息时，要通过用户id主键接口添加
+
+2. 观察需要提取的信息
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210311234500.png)
+
+> ksID时一个很重要的信息，如果有需要再添加把。
+
+3. 好吧，还是请求live开头的页面，把ksID也存起来
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210311234937.png)
+
+> 星座和地址也存着把
+>
+> 建表的时候添加一个字段，来表示一些状态。
+
+4. 我觉得还是先学习一下model中写函数，等下方便自己添加数据。
+
+> https://www.cnblogs.com/shenjianping/p/11526538.html,这篇博客上面用到了多对多关系，使用
+
+```
+authors=models.ManyToManyField("Author")
+```
+
+- 这是我之前没有见到过的。主播和视频是一多的关系，使用主键。
+
+5. 还是歇歇，看看书上面怎么搞的，下次再干。
