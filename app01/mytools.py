@@ -1,6 +1,7 @@
+from ksDjango.settings import currentData
 import requests
 import json
-
+# 获取video界面的视频信息
 class userdetailSpider():
     URL = "https://video.kuaishou.com/graphql"
 
@@ -74,7 +75,7 @@ class userdetailSpider():
             if temp == 0:
                 break
 
-# 输出快手ID和cookie
+# 输出快手ID和cookie,获取live界面的视频信息
 class userdetailLiveSpider():
 
     URL = "https://live.kuaishou.com/m_graphql"
@@ -104,6 +105,7 @@ class userdetailLiveSpider():
 
     def get_data(self):
         try:
+
             res = requests.post(self.URL, headers=self.headers, json=self.payload)
             res.encoding = "utf-8"
             m_json = res.json()  # 字典格式
@@ -111,7 +113,7 @@ class userdetailLiveSpider():
             feeds_list = m_json["data"]["publicFeeds"]["list"]
             pcursor = m_json["data"]["publicFeeds"]["pcursor"]
             self.payload["variables"]["pcursor"] = pcursor
-            # print(m_json)
+            print(m_json)
 
             #-------------筛选数据---------------#
             result = {}
@@ -138,9 +140,99 @@ class userdetailLiveSpider():
             temp = self.get_data()
             if temp == 0:
                 break
+# 获取live页面的主播信息
+class ksLiveSpider():
+    URL = "https://live.kuaishou.com/m_graphql"
+
+    headers = {
+        "accept": "*/*",
+        "Content-Length": "<calculated when request is sent>",
+        "Accept-Encoding": "gzip, deflate",
+        "Connection": "keep-alive",
+        "content-type": "application/json",
+        # 我添加的时间属性Max-Age=8640000
+        "Cookie": r'clientid=3;Max-Age=8640000; did=web_ec874916e390b9741609686125a0452e; didv=1613879531823; client_key=65890b29; kpn=GAME_ZONE; userId=427400950; kuaishou.live.bfb1s=7206d814e5c089a58c910ed8bf52ace5; userId=427400950; kuaishou.live.web_st=ChRrdWFpc2hvdS5saXZlLndlYi5zdBKgAYm9VZdJaOIjsJDqPoO-yLNw4ZuZul234nekkYMdMsNjIq-i5skiOlVnLhFSPv5PTbrQ45yitiFEkQMGUCDxpsbRcsDpHI0CDZfflQeD9Z14cuQ8x2YJORv-1Pz8JM4-_qmBhAxjVHJ8OSs4kMHRKpCvZja6UUYbXLunFhKT5fyhx1HViPCmuVjBcsSxZEtEpvponSa3DjtkZU2KQ3M9pUoaEm-zwBmcbUA4lm5ejQnh9kVjySIgjJsh3xaj6ckXgLNLF3iPjKs6sC7d1lWqH0SZbWeHTREoBTAB; kuaishou.live.web_ph=ed6156f0bc66780438d593dfc3b3f8fa6f63',
+        "Host": "live.kuaishou.com",
+        "Origin": "https://live.kuaishou.com",
+        "Referer": "https://live.kuaishou.com/profile/LY7452065",
+        "User-Agent": "PostmanRuntime/7.26.8"
+    }
+
+    payload = {"operationName":"sensitiveUserInfoQuery","variables":{"principalId":"3xkm67762d5fwzc"},"query":"query sensitiveUserInfoQuery($principalId: String) {\n  sensitiveUserInfo(principalId: $principalId) {\n    kwaiId\n    originUserId\n    constellation\n    cityName\n    counts {\n      fan\n      follow\n      photo\n      liked\n      open\n      playback\n      private\n      __typename\n    }\n    __typename\n  }\n}\n"}
+    def __init__(self,userId,myCookie):
+        self.headers["Referer"] = "https://live.kuaishou.com/profile/"+userId
+        self.payload["variables"]["principalId"] = userId
+        self.headers["Cookie"] = myCookie
+    def get_data(self):
+        try:
+            res = requests.post(self.URL, headers=self.headers, json=self.payload)
+            res.encoding = "utf-8"
+            m_json = res.json()  # 字典格式
+            print(m_json)
+
+            result = {}
+            #---------提取有用数据--------#
+
+            result["ksId"] = m_json["data"]["sensitiveUserInfo"]["kwaiId"]
+            result["xinzuo"] = m_json["data"]["sensitiveUserInfo"]["constellation"]
+            result["cityName"] = m_json["data"]["sensitiveUserInfo"]["cityName"]
+            result["fan"] = m_json["data"]["sensitiveUserInfo"]["counts"]["fan"]
+            result["follow"] = m_json["data"]["sensitiveUserInfo"]["counts"]["follow"]
+            # 作品数
+            result["photo"] = m_json["data"]["sensitiveUserInfo"]["counts"]["photo"]
+
+            # print(result)
+            return result
+
+        except:
+            print("页面请求错误，请检查cookie是否过期，id是否正确")
+
+# 获取video页面的主播信息
+class ksVideoSpider():
+    URL = "https://video.kuaishou.com/graphql"
+
+    # header中需要更改cookie和Referer
+    headers = {
+        "accept": "*/*",
+        "Content-Length": "<calculated when request is sent>",
+        "Accept-Encoding": "gzip, deflate",
+        "Connection": "keep-alive",
+        "content-type": "application/json",
+        # 我添加的时间属性Max-Age=8640000
+        "Cookie": r'kpf=PC_WEB; kpn=KUAISHOU_VISION; clientid=3;Max-Age=8640000; did=web_ec874916e390b9741609686125a0452e; didv=1613879531823; client_key=65890b29; userId=427400950; kuaishou.server.web_st=ChZrdWFpc2hvdS5zZXJ2ZXIud2ViLnN0EqABQrFWsr52Mhp5GfcmignSLoddGbbCBCTAkyedrcLkHqxI9IIdilOuxFUWwhS41WnVKwFJ0Win96_M-frAXGNXXDx78d0FjGOylLgeVtcXUGsIkgyxVkopf2IR_Pvps61IaXw1XTHZOdTrwQkDIdwESPDssQTuW9XNIfjJK9e88ZgJYNJI5bK5n38Zm37kl8omE8R8E8ZhL87TgGpaRZq3XRoSTdCMiCqspRXB3AhuFugv61B-IiBO8gZCTy1dvCTjyGg0IEN6MrmkUACDgSB3T2BYkkBQ-SgFMAE; kuaishou.server.web_ph=dfcba445b9b7f619411fdced6b1e61d6f207',
+        "Host": "video.kuaishou.com",
+        "Origin": "https://video.kuaishou.com",
+        "Referer": "https://video.kuaishou.com/profile/3xcidpetejrcagy",
+        "User-Agent": "PostmanRuntime/7.26.8"
+    }
+    # 这里的userID也要更改
+    payload = {"operationName":"visionProfile","variables":{"userId":"3xcidpetejrcagy"},"query":"query visionProfile($userId: String) {\n  visionProfile(userId: $userId) {\n    result\n    hostName\n    userProfile {\n      ownerCount {\n        fan\n        photo\n        follow\n        photo_public\n        __typename\n      }\n      profile {\n        gender\n        user_name\n        user_id\n        headurl\n        user_text\n        user_profile_bg_url\n        __typename\n      }\n      isFollowing\n      __typename\n    }\n    __typename\n  }\n}\n"}
+    def __init__(self, userID, myCookie):
+        userdetailSpider.headers["Referer"] = "https://video.kuaishou.com/profile/"+userID
+        userdetailSpider.payload["variables"]["userId"] = userID
+        userdetailSpider.headers["Cookie"] = myCookie
+
+    def get_data(self):
+        try:
+            res = requests.post(self.URL, headers=self.headers, json=self.payload)
+            res.encoding = "utf-8"
+            m_json = res.json()  # 字典格式
+            print(m_json)
+
+            result = {}
+            #---------提取有用数据--------#
+            result["user_text"] = m_json["data"]["visionProfile"]["userProfile"]["profile"]["user_text"]
+            result["gender"] = m_json["data"]["visionProfile"]["userProfile"]["profile"]["gender"]
+            result["userImg"] = m_json["data"]["visionProfile"]["userProfile"]["profile"]["headurl"]
+
+            # print(result)
+            return result
+
+        except:
+            print("页面请求错误，请检查cookie是否过期，id是否正确")
 if __name__ == "__main__":
     theCookie = "kpf=PC_WEB; kpn=KUAISHOU_VISION; clientid=3; clientid=3;Max-Age=8640000; did=web_ec874916e390b9741609686125a0452e; didv=1613879531823; client_key=65890b29; userId=427400950; kuaishou.server.web_st=ChZrdWFpc2hvdS5zZXJ2ZXIud2ViLnN0EqABQrFWsr52Mhp5GfcmignSLoddGbbCBCTAkyedrcLkHqxI9IIdilOuxFUWwhS41WnVKwFJ0Win96_M-frAXGNXXDx78d0FjGOylLgeVtcXUGsIkgyxVkopf2IR_Pvps61IaXw1XTHZOdTrwQkDIdwESPDssQTuW9XNIfjJK9e88ZgJYNJI5bK5n38Zm37kl8omE8R8E8ZhL87TgGpaRZq3XRoSTdCMiCqspRXB3AhuFugv61B-IiBO8gZCTy1dvCTjyGg0IEN6MrmkUACDgSB3T2BYkkBQ-SgFMAE; kuaishou.server.web_ph=dfcba445b9b7f619411fdced6b1e61d6f207"
-    theUserID = "3xkm67762d5fwzc"
-
-    test = userdetailSpider(theUserID,theCookie)
-    test.start_spider()
+    theUserID = "3x82s2dxgiicw4w"
+    ksCookie = "clientid=3; did=web_ec874916e390b9741609686125a0452e; didv=1613879531823; client_key=65890b29; kpn=GAME_ZONE; userId=427400950; userId=427400950; kuaishou.live.bfb1s=ac5f27b3b62895859c4c1622f49856a4; kuaishou.live.web_st=ChRrdWFpc2hvdS5saXZlLndlYi5zdBKgAfwzFw_Kb2uHnKBQgQQ9-nhGuO2rbpCerVYO54A3KmQUQ6JOiQO-mLFbcwABZ9A-Fl2X5WxQ9yuXHLsMV-RsuZygWUnugryt27cp6rgKzgLI7y6ar8R1RdP6CUPp1JTjbgZ6uzAdhQdayNbiM-isllV5Yyj9bb4IK_LPqzxYDjf_uy0QRa_YxWiMtTUPQd8CFinqBXb7gj-o9HNOZG_v1y0aEk2hY_LIikBot7IUVtJ3ydB6KCIgmvgxlD_4Ac99qgHpdvBfsxGugwTfosyEsfq-BaaFMG0oBTAB; kuaishou.live.web_ph=ae0615d67633a6c0debe8d4668be19e1d446"
+    test = ksLiveSpider(theUserID,ksCookie)
+    test.get_data()
