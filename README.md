@@ -820,3 +820,385 @@ UserTitle.objects.filter(userID=qu.userID).update(ksID=qu.ksID,
 ```
 
 6 今天就到这了，明天和室友一起去景点旅游。
+
+> 明天把功能录一个演示视频。
+>
+> 实现后端功能，是通过按钮触发js的函数，然后想后端的接口post实现相应的功能。这是再《跟老齐学django》上看到的。
+
+## 2021.3.13
+
+> 今天下雨了，不出去玩了
+
+#### IP问题
+
+1. 我早上跑了一下`userdetailSpider(theUserID,theCookie)`,刚开始是好的，然后就**返回None**
+2. 然后我就去浏览器总刷新，刷新不出来视频。我怀疑是**由于访问得太快，暂时的封锁了IP**
+3. 还有None问题，如果不处理就会一直请求并且返回None。这个问题就是我之前提到的result，为1代表成功
+4. 果然是暂时性的，我没有更改cookie，再去怕代码成功了，但还是要加上延时函数。这叫请求太快，亲求失败吧。
+5. 我把延时函数删除了，跑了几次都是成功的，只好先这样写着。
+
+```
+            if m_json["data"]["visionProfilePhotoList"]["result"] == 1:
+                print("请求成功，开始筛选数据")
+            else:
+                print("请求数据失败，无法筛选，程序终止")
+                return -1
+```
+
+#### 筛选数据
+
+1. 这是视频信息
+
+```
+{'caption': '锦上添花我不需要 雪中送炭你做不到', 'coversUrl': 'https://tx2.a.yximgs.com/upic/2018/03/24/19/BMjAxODAzMjQxOTIyNDVfMTA1MjM4MjNfNTYwMzAxNTQwNF8xXzM=_B73ece8a2ba15635894bd1d22c88ab2ab.jpg?tag=1-1615596637-xpcwebprofile-0-c2teex2jjk-fe86cc6122e6e5cc&clientCacheKey=3xp87jw5zmeue69.jpg&di=75960068&bp=14734', 'videoID': '3xp87jw5zmeue69', 'videoPath': 'https://txmov2.a.yximgs.com/upic/2018/03/24/19/BMjAxODAzMjQxOTIyNDVfMTA1MjM4MjNfNTYwMzAxNTQwNF8xXzM=_b_B4e460c2dedc40be078e7a315389327f8.mp4?tag=1-1615596637-xpcwebprofile-0-nc4gujqkgj-65ff48b3ed0c2822&clientCacheKey=3xp87jw5zmeue69_b.mp4&tt=b&di=75960068&bp=14734', 'likeCount': '30', 'realLikeCount': 30, 'animatedCoverUrl': None}
+
+```
+
+2. 网页上我要是开启代理刷新就会出现数据。
+3. live开头的请求视频好像会封锁ip，我准备再juoyterlab上试一下，结果进去不了，可能是家里的旧电脑又被怎么了。
+4. 整理。创建视频表。
+
+```
+class UserVideo(models.Model):
+    STATE = [
+        (1,"默认ksVideo"),
+        (2,"ksLive"),
+        (3,"ksVideo+ksLive")
+    ]
+    # 当被参照删除时，自己也被删除
+    theUser = models.ForeignKey(UserTitle,on_delete=models.CASCADE)
+
+    videoID = models.CharField(max_length=128,default="xxxxxxxxxxxxxx",verbose_name="视频id")
+    caption = models.CharField(max_length=512,default="暂无",verbose_name="视频描述")
+    coversUrl = models.CharField(max_length=512,default="xxxxxxxxxxx",verbose_name="视频封面")
+    videoPath = models.CharField(max_length=512,default="xxxxxxxxxxxxx",verbose_name="视频地址")
+    realLikeCount = models.CharField(max_length=64,default="xxxxxxxxxxx",verbose_name="具体点赞数量")
+    animatedCoverUrl = models.CharField(max_length=512,default="xxxxxxxx",verbose_name="封面动画")
+
+    stateVideo = models.IntegerField(choices=STATE,default=1,verbose_name="状态")
+
+    displayView = models.CharField(max_length=64,default="-1",verbose_name="播放量")
+    displayComment = models.CharField(max_length=64,default="-1",verbose_name="评论数")
+
+```
+
+5. 然后改了一下类，把爬取到的数据以列表形式存取到endResult属性中。因为一般文件不能调用.model
+6. 这个博客，演示了一对多怎么添加数据：https://www.cnblogs.com/wyhluckdog/p/11383234.html
+
+- 这是我的尝试,失败
+
+```
+            for result in results:
+                UserTitle.objects.get(userId = qu.userID).theUser.objects.create(videoID = result["videoID"],
+                                                                                 caption = result["caption"],
+                                                                                 coversUrl = result["coversUrl"],
+                                                                                 videoPath = result["videoPath"],
+                                                                                 realLikeCount = result["realLikeCount"],
+                                                                                 animatedCoverUrl=result["animatedCoverUrl"],
+                                                                                 )
+```
+
+7. 现在体验到了，网站数据一多，执行操作起来就很卡，删除所有数据不是马上的事情。
+
+#### 添加video动作
+
+1. 遇到了`animatedCoverUrl`字段报错，添加一个判断就可以了
+
+```
+                if result["animatedCoverUrl"] == None:
+                    result["animatedCoverUrl"] = "一直没有"
+```
+
+2. 遇到状态没有改变的问题，把转台赋值语句写在for外面
+
+```
+ def myvideoMP4(self,request,queryset):
+        cData = currentData()
+        for qu in queryset:
+            thevideo = userdetailSpider(qu.userID,cData.theCookie)
+            thevideo.start_spider()
+            results = thevideo.endResult
+
+            ttUser = UserTitle.objects.get(userID=qu.userID)
+            for result in results:
+
+                if result["animatedCoverUrl"] == None:
+                    result["animatedCoverUrl"] = "一直没有"
+                print(result["videoID"])
+                time.sleep(1)
+                temp = UserVideo.objects.create(videoID = result["videoID"],
+                                        caption = result["caption"],
+                                        coversUrl = result["coversUrl"],
+                                        videoPath = result["videoPath"],
+                                        realLikeCount = result["realLikeCount"],
+                                        animatedCoverUrl=result["animatedCoverUrl"],
+
+                                         theUser = ttUser)
+                temp.save()
+                del temp
+            ttUser.stateUser = 4
+            ttUser.save()
+            del ttUser
+```
+
+3. 就是这样把，还有个问题没解决。填入的数据又很多时重复的。我增加了1秒的延迟还是不行
+4. 现在去看一下原生的endResult的数值
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210313125302.png)
+
+> 对象输出的数据是重复的，是爬虫的问题
+
+5. 应该是我吧endResult属性写在了，\__init__中，而且初始化为空列表。
+6. 应该是这个地方逻辑的问题
+
+```
+ #-------------具体提取数据----------#写到这里想起了，我应该是通过live获取视频信息
+            result = {}     #信息存储在字典中
+            for feeds in feeds_list:
+                result["caption"] = feeds["photo"]["caption"]
+                result["coversUrl"] = feeds["photo"]["coverUrl"]
+                result["videoID"] = feeds["photo"]["id"]
+                result["videoPath"] = feeds["photo"]["photoUrl"]
+                result["likeCount"] = feeds["photo"]["likeCount"]
+                result["realLikeCount"] = feeds["photo"]["realLikeCount"]
+                result["animatedCoverUrl"] = feeds["photo"]["animatedCoverUrl"]
+                self.endResult.append(result)
+                print(result)
+                #-----------待会再这里编写存储到数据库的函数--------------
+```
+
+7. 确实，改成这样就没问题了
+
+```
+            #-------------具体提取数据----------#写到这里想起了，我应该是通过live获取视频信息
+            # result = {}     #信息存储在字典中
+            for feeds in feeds_list:
+                result = {}
+                result["caption"] = feeds["photo"]["caption"]
+                result["coversUrl"] = feeds["photo"]["coverUrl"]
+                result["videoID"] = feeds["photo"]["id"]
+                result["videoPath"] = feeds["photo"]["photoUrl"]
+                result["likeCount"] = feeds["photo"]["likeCount"]
+                result["realLikeCount"] = feeds["photo"]["realLikeCount"]
+                result["animatedCoverUrl"] = feeds["photo"]["animatedCoverUrl"]
+                self.endResult.append(result)
+                print(result)
+                del result
+                #-----------待会再这里编写存储到数据库的函数--------------
+```
+
+8. 准备录演示视频的，过程中有一个主播，出现**视频没有爬取完全的问题**
+9. 测试爬取是完整的，可能是我在执行动作的时候点击别的给终端了把。
+10. 那个爬取全部视频的运行时间有些长，先不录视频了。
+
+#### 完善Live对象
+
+> 本来应该去做后台统计和获取热门页面的userid和name的，但是有些不甘心，想把获取相册的对象写完整，这样就可以产看是否否获取到了全部作品了。
+
+1. 刷新了好几次页面，还是显示不了作品。
+2. 然后尝试live+ksID，可以访问，那么，就需要调用库里面已经存储的ksID来进行相关逻辑的编写。
+3. 成功，这是不包含相册的一条数据
+
+```
+{'caption': '“留下来 或者我跟你走”', 'displayView': '903.6w', 'displayLike': '48.1w', 'displayComment': '1.3w', 'imgUrls': [], 'liveID': '3xb7betx499z9um'}
+```
+
+4. 视频id和我从video界面获取的是一样的，如果每个都对比一下，会消耗性能，因为video界面可能不包含完整的live中的视频。（后期处理）
+
+- 这是live请求关于相册筛选后的数据
+
+```
+{'caption': '不知不觉又长大了一岁，生日快乐🎂', 'displayView': '31w', 'displayLike': '1.1w', 'displayComment': '1949', 'imgUrls': ['http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzc1MTAzNjU0ODA=_0.webp', 'http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzc1MTAzNjU0ODA=_1.webp', 'http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzc1MTAzNjU0ODA=_2.webp', 'http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzc1MTAzNjU0ODA=_3.webp', 'http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzc1MTAzNjU0ODA=_4.webp', 'http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzc1MTAzNjU0ODA=_5.webp', 'http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzc1MTAzNjU0ODA=_6.webp', 'http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzc1MTAzNjU0ODA=_7.webp'], 'liveID': '3xmm5g93pqgd8tc'}
+```
+
+> 忘记了播放量是个很重要的数据，还是要重新遍历一遍，然后添加字段
+
+5. 这篇博客介绍了存储数组：https://zhuanlan.zhihu.com/p/88145941
+6. 删除了migrations里面的刚才创建数据库迁移的文件,出现问题
+
+```
+django.db.utils.OperationalError: table "app01_userphoto" already exists
+```
+
+- 参考这里解决的：https://blog.csdn.net/roy8666/article/details/104634195
+
+7. 我创建的那个列表字段是填写数字的，没注意。我进源文件看了一下，好像还可以添加多个图片
+
+```
+def get_available_image_extensions():
+    try:
+        from PIL import Image
+    except ImportError:
+        return []
+    else:
+        Image.init()
+        return [ext.lower()[1:] for ext in Image.EXTENSION]
+
+
+def validate_image_file_extension(value):
+    return FileExtensionValidator(allowed_extensions=get_available_image_extensions())(value)
+```
+
+8. 直接当作字符串存起来，也好分割成列表。
+9. 这是创建的的model
+
+```
+class UserPhoto(models.Model):
+    photoID = models.CharField(max_length=128,verbose_name="相册id",default="xxxxxxxx")
+    caption = models.CharField(max_length=512,verbose_name="相册描述",default="暂无")
+    displayView = models.CharField(max_length=32,verbose_name="播放量",default="-1")
+    displayLike = models.CharField(max_length=32,verbose_name="点赞数",default="-1")
+    displayComment = models.CharField(max_length=32,verbose_name="评论数",default="-1")
+
+
+
+    imgUrls = models.CharField(max_length=5000,default=" ")
+
+
+    def __str__(self):
+        # print(self.videoID)
+        return self.photoID
+
+    class Mate:
+        verbose_name = verbose_name_plural = "相册信息"
+```
+
+10. 上面忘记添加了主键，我添加后报错
+
+```
+django.db.utils.OperationalError: no such column: app01_userphoto.theUser_id
+```
+
+> 差点真的删除或者迁移数据库，解决办法是添加字段，但这个很奇怪，不知道怎么添加。然后我注释主键字段，访问成功。原来里面还有条数据，估计就是这条数据没有主键导致报错。
+
+11. 还是报这个错误。
+
+12. 解决了，我之前这个字段是theUser，和上面的是相同的，改一下名字就好了。
+
+```
+    thephotoUser = models.ForeignKey(UserTitle,on_delete=models.CASCADE)
+```
+
+13. 数据库里面添加字段，**不需要使用延时**
+
+```
+http://tx2.a.yximgs.com/ufile/atlas/9e53e8ba157f445c88009a4dce85fe16_0.webphttp://tx2.a.yximgs.com/ufile/atlas/9e53e8ba157f445c88009a4dce85fe16_1.webphttp://tx2.a.yximgs.com/ufile/atlas/9e53e8ba157f445c88009a4dce85fe16_2.webphttp://tx2.a.yximgs.com/ufile/atlas/9e53e8ba157f445c88009a4dce85fe16_3.webphttp://tx2.a.yximgs.com/ufile/atlas/9e53e8ba157f445c88009a4dce85fe16_4.webp
+```
+
+14. 要添加分割符号,测试时候才发现的
+
+```
+photoUrl = ','.join(result["imgUrls"])
+```
+
+```
+http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzE2NjAyMDc0NjI3XzE1NjYyODAxNTQ5MTc=_0.webp,http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzE2NjAyMDc0NjI3XzE1NjYyODAxNTQ5MTc=_1.webp,http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzE2NjAyMDc0NjI3XzE1NjYyODAxNTQ5MTc=_2.webp,http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzE2NjAyMDc0NjI3XzE1NjYyODAxNTQ5MTc=_3.webp,http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzE2NjAyMDc0NjI3XzE1NjYyODAxNTQ5MTc=_4.webp,http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzE2NjAyMDc0NjI3XzE1NjYyODAxNTQ5MTc=_5.webp,http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzE2NjAyMDc0NjI3XzE1NjYyODAxNTQ5MTc=_6.webp,http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzE2NjAyMDc0NjI3XzE1NjYyODAxNTQ5MTc=_7.webp,http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzE2NjAyMDc0NjI3XzE1NjYyODAxNTQ5MTc=_8.webp,http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzE2NjAyMDc0NjI3XzE1NjYyODAxNTQ5MTc=_9.webp,http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzE2NjAyMDc0NjI3XzE1NjYyODAxNTQ5MTc=_10.webp,http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzE2NjAyMDc0NjI3XzE1NjYyODAxNTQ5MTc=_11.webp,http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzE2NjAyMDc0NjI3XzE1NjYyODAxNTQ5MTc=_12.webp,http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzE2NjAyMDc0NjI3XzE1NjYyODAxNTQ5MTc=_13.webp,http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzE2NjAyMDc0NjI3XzE1NjYyODAxNTQ5MTc=_14.webp,http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzE2NjAyMDc0NjI3XzE1NjYyODAxNTQ5MTc=_15.webp,http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzE2NjAyMDc0NjI3XzE1NjYyODAxNTQ5MTc=_16.webp,http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzE2NjAyMDc0NjI3XzE1NjYyODAxNTQ5MTc=_17.webp,http://tx2.a.yximgs.com/ufile/atlas/MTI3MjAyMjYyXzE2NjAyMDc0NjI3XzE1NjYyODAxNTQ5MTc=_18.webp
+```
+
+15. 现在思考问题，重复执行动作，会不会重复添加了数据，如果是被覆盖了，也是会给数据库增加压力。后期如果数据不完整，需要重新爬取，**需要一个判断操作**。
+16. 还有个问题，**个别用户无法获取ksID**，可能需要自己手动添加
+
+## 2021.3.19
+
+#### *添加静态问题问题
+
+> 由于django在**调试**模式下**不能加载静态文件**，导入静态文件不能一般导入，可以使用外部链接。
+
+- setting.py
+
+```
+STATICFILES_DIRS = [os.path.join(BASE_DIR,"static"),
+]
+STATIC_URL = '/static/'
+```
+
+- 好吧，我没有配置成功。一般就是这个方式导入吧
+
+```
+{% load static %}
+{% block title %}管理页面{% endblock title %}
+{% block style %}<link rel="stylesheet" type="text/css" href="{% static 'css/showAdmin.css' %}">{% endblock %}
+```
+
+- 我看了一下之前写的博客，还是不知道。不纠结了，直接写在内部
+
+## 2021.3.20
+
+#### *获取指定字段的全部数据
+
+- 使用这条语句,返回QuerySet类型。开始是循环提取添加到指定的列表中，这样非常消耗性能。
+
+```
+    allCover = UserVideo.objects.values("coversUrl")
+```
+
+> 参考博客：https://blog.csdn.net/weixin_33893473/article/details/86278284
+
+#### 继续
+
+1. 遇到了有的视频封面大小不一样的问题
+
+2. 观察了一下，live界面的视频左右两边会有一些空白，vi'deo是刚好填充好，还是按照live页面的样式写吧。
+
+   > 获取图片原始尺寸：https://blog.csdn.net/x550392236/article/details/78723297
+
+3. 再想想，**live界面没有展示的视频，肯定是不好按照那种尺寸展示的视频**
+
+4. 那么，还是先做主播主页的页面吧。
+
+#### 统计数据库中的video和photo
+
+1. 统计每个用户的video数量
+
+```
+def showAdmin(request):
+    allUser = UserTitle.objects.values("userName","userID")
+    for uID in allUser:
+        theUsr= UserTitle.objects.get(userID=uID["userID"])
+        myVideo = UserVideo.objects.filter(theUser=theUsr.id)
+        print(uID)
+        print(len(myVideo))
+
+    return render(request,'pages/showAdmin.html',{"result":allUser})
+```
+
+> 这些逻辑后面要使用接口触发，不然一进这个视图就触发一次，太消耗时间。
+
+```
+http://tx2.a.yximgs.com/ufile/atlas/NTE5MzQ5NDg0MTc0OTc3NzcxOV8xNjE1NjI4ODcwNjA0_0.webp,http://tx2.a.yximgs.com/ufile/atlas/NTE5MzQ5NDg0MTc0OTc3NzcxOV8xNjE1NjI4ODcwNjA0_1.webp,http://tx2.a.yximgs.com/ufile/atlas/NTE5MzQ5NDg0MTc0OTc3NzcxOV8xNjE1NjI4ODcwNjA0_2.webp,http://tx2.a.yximgs.com/ufile/atlas/NTE5MzQ5NDg0MTc0OTc3NzcxOV8xNjE1NjI4ODcwNjA0_3.webp,http://tx2.a.yximgs.com/ufile/atlas/NTE5MzQ5NDg0MTc0OTc3NzcxOV8xNjE1NjI4ODcwNjA0_4.webp,http://tx2.a.yximgs.com/ufile/atlas/NTE5MzQ5NDg0MTc0OTc3NzcxOV8xNjE1NjI4ODcwNjA0_5.webp,http://tx2.a.yximgs.com/ufile/atlas/NTE5MzQ5NDg0MTc0OTc3NzcxOV8xNjE1NjI4ODcwNjA0_6.webp,http://tx2.a.yximgs.com/ufile/atlas/NTE5MzQ5NDg0MTc0OTc3NzcxOV8xNjE1NjI4ODcwNjA0_7.webp
+```
+
+2. 获取图片数量的时候出现了多的，可能与爬虫逻辑有关
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210320184211.png)
+
+3. 我查看了一下图片，名字和图片不匹配，确实是逻辑问题
+4. 删除存储图片的数据，重新执行动作，数据可以被重复添加。
+
+#### 进一步处理爬虫类和状态表示
+
+> 执行爬虫脚本失败要终止，数据库不能存储到数据库。设计一个状态表示，不能重复存储数据。脚本还是设置延时参数，可以调节。
+
+1. 我做了进一步的处理，请求到result=0，可能不是爬取太快的问题，其他问题。如果reslut=0，再自己浏览器中多刷新几次，直到出现作品，再执行代码result=1.
+
+2. **爬取不完整就放弃**，或者**多次爬取相互补充**。后面数据更新了，自己也要对爬虫进行跟新。
+
+3. 现在要决定一下工作，简单的就是爬取到数据，最后自己写脚本把需要的数据下载到本地。复杂的是写可持续爬虫的代码，官网跟新不修改代码就可以直接爬取过来。如果要作为找工作的项目，就还需要加入用户注册登录系统，可以点赞，关注。再复杂的是评论，上传视频等，这样一做就要考虑其他问题，如doss攻击，服务器内存等问题。代码逻辑新能问题就已经够呛了。
+
+4. 延时设置为5秒，爬取一波是正常的。3秒也正常。然后设置爬取数据不完整，不存储到数据库。
+
+5. ```
+   userdetailLiveSpider()
+   ```
+
+> 这个类是获取live界面的视频信息，暂时测试延时可以不要。
+
+6. 我设置5状态可以转变为1或者2状态，如果这样回头再执行一遍，应该会出现重复的问题。确实有，**还是入库前要判断一下**。
+7. 进行了处理，多次运行出现问题，获取Photo时候获取不了，浏览器刷新也出现不了数据，使用IP代理就别了吧，实在不想就只要vide的视频。
+8. 今天要处理的问题估计就没问题。重复运行提取数据就可以了，下一步做随机获取username和userID
+9. 唉！真难，以为没有问题出现了死循环。
+10. 我把火狐上面的cookie复制过来，可以后去photo
+
+#### 随机获取userID
+
+1. dict与json数据之间的转换：https://blog.csdn.net/qq_33689414/article/details/78307018

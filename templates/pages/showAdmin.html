@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}管理页面{% endblock title %}
+
+{% block content %}
+    <h1 style="text-align: center">这是管理页面</h1>
+
+    <div class="row">
+        <div id="showAdmin-main-left" class="col-md-2">
+            <ul>
+                <li><h4>筛选信息</h4></li>
+                <li>
+                    <button id="getUserRandom">显示全部信息</button>
+                </li>
+                <li><h4>获取数据脚本</h4></li>
+                <li>
+                    <button>随机获取title</button>
+                </li>
+                <li><h4>修改Cookie</h4></li>
+            </ul>
+
+
+        </div>
+
+
+        <div id="showAdmin-main-middle" class="col-md-9">
+            <form>
+                <div id="result">
+                    <table id="result-list" class="table table-condensed">
+                        <thead>
+                        <tr>
+                            <th><span><input type="checkbox"></span></th>
+                            <th>用户名</th>
+                            <th>ksID</th>
+                            <th>状态</th>
+                            <th>作品数量</th>
+                            <th>video</th>
+                            <th>photo</th>
+                        </tr>
+
+                        </thead>
+                        <tbody>
+                        {% for mes in result %}
+                            <tr>
+                                <th><span><input type="checkbox"></span></th>
+                                <th>{{ mes.userName }}</th>
+                                <td>{{ mes.userID }}</td>
+                                <td>status</td>
+                                <td>{{ mes.realVideoCount }}</td>
+                                <td>{{ mes.myVideoCount }}</td>
+                            <td>{{ mes.myPhotoCount }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+
+        </div>
+
+
+    </div>
+{% endblock content %}
+
+
+{% block theStyle %}
+    <style>
+        #showAdmin-main-left {
+            background-color: green;
+        }
+
+    </style>
+{% endblock %}
+{% block theScript %}
+<script>
+$("#getUserRandom").click(function () {
+$.ajax({
+  type: 'POST',
+  url: 'http://127.0.0.1:8000/api/getUserRandom/3/',
+  data: {"id":1},
+  dataType: jsonFormat
+});
+})
+</script>
+{% endblock %}

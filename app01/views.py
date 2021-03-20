@@ -1,6 +1,9 @@
-from django.shortcuts import render
-from .models import UserTitle
+from django.shortcuts import render,HttpResponse
+from .models import UserTitle,UserVideo,UserPhoto
 from .tools import start_data
+from .mytools import getUserIDRandom
+from ksDjango.settings import currentData
+import json
 
 def index(request):
     data = {"formUserID":"testID","formUserName":"testName","message":"没有提示"}
@@ -35,3 +38,37 @@ def tool(request):
         current = 1
 
     return render(request,"pages/tool.html",context=data)
+
+def showAdmin(request):
+    allUser = UserTitle.objects.values("userName","userID")
+    i = 0
+    for uID in allUser:
+        # 获取数据库中实际视频数量
+        theUsr= UserTitle.objects.get(userID=uID["userID"])
+        myVideo = UserVideo.objects.filter(theUser=theUsr.id)
+        allUser[i]["myVideoCount"] = len(myVideo)
+        # 获取主播作品数量
+        allUser[i]["realVideoCount"] = theUsr.photo
+        # 获取数据库中相册数量
+        myPhoto = UserPhoto.objects.filter(thephotoUser=theUsr.id)
+        allUser[i]["myPhotoCount"] = len(myPhoto)
+        i += 1
+
+    return render(request,'pages/showAdmin.html',{"result":allUser})
+
+def showVideo(request):
+    allCover = UserVideo.objects.values("coversUrl")
+    return render(request,'pages/showVideo.html',{"result":allCover})
+
+
+def getUserRandom(request,counts):
+    if request.method == 'POST':
+        print("-----------")
+    cDate = currentData()
+    theGetScript = getUserIDRandom(cDate.theCookie)
+    theGetScript.get_data()
+    results = theGetScript.endResult
+    messgae = json.dumps(results)
+    # return render(request,results)
+    return HttpResponse(messgae)
+

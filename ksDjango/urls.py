@@ -16,10 +16,14 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from app01.views import index,tool
+from app01.views import index,tool,showAdmin,showVideo,getUserRandom
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('',index),
     path('tool/',tool),
+    path('showVideo/',showVideo),
+    path('showAdmin/',showAdmin),
+
+    path('api/getUserRandom/<int:counts>/',getUserRandom)
 ]

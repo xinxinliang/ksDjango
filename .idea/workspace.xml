@@ -7,11 +7,15 @@
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="DjangoConsoleOptions" custom-start-script="import sys; print('Python %s on %s' % (sys.version, sys.platform))&#10;import django; print('Django %s' % django.get_version())&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;if 'setup' in dir(django): django.setup()&#10;import django_manage_shell; django_manage_shell.run(PROJECT_ROOT)">
+    <option name="myCustomStartScript" value="import sys; print('Python %s on %s' % (sys.version, sys.platform))&#10;import django; print('Django %s' % django.get_version())&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;if 'setup' in dir(django): django.setup()&#10;import django_manage_shell; django_manage_shell.run(PROJECT_ROOT)" />
+  </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="HTML File" />
         <option value="Python Script" />
+        <option value="CSS File" />
+        <option value="HTML File" />
       </list>
     </option>
   </component>
@@ -28,6 +32,9 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/ksDjango/settings.py" />
+    <property name="list.type.of.created.stylesheet" value="CSS" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.django.DjangoModulesConfigurable" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
@@ -127,6 +134,21 @@
       <workItem from="1615476103072" duration="2149000" />
       <workItem from="1615524501954" duration="138000" />
       <workItem from="1615536513871" duration="15179000" />
+      <workItem from="1615593806889" duration="17016000" />
+      <workItem from="1615621065834" duration="12060000" />
+      <workItem from="1615643878694" duration="382000" />
+      <workItem from="1615644277951" duration="145000" />
+      <workItem from="1615644623728" duration="1205000" />
+      <workItem from="1615964520809" duration="174000" />
+      <workItem from="1615968453456" duration="813000" />
+      <workItem from="1616040626298" duration="1805000" />
+      <workItem from="1616074930848" duration="671000" />
+      <workItem from="1616147679800" duration="1342000" />
+      <workItem from="1616153947154" duration="3821000" />
+      <workItem from="1616163219531" duration="884000" />
+      <workItem from="1616210030644" duration="2196000" />
+      <workItem from="1616226119029" duration="24073000" />
+      <workItem from="1616259836901" duration="2997000" />
     </task>
     <servers />
   </component>
@@ -138,38 +160,46 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="651" y="274" key="#Notifications/0.0.1536.824@0.0.1536.824" timestamp="1615429347570" />
-    <state x="223" y="67" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1615429428875">
+    <state x="223" y="67" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1615631138653">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="223" y="67" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1536.824@0.0.1536.824" timestamp="1615429428875" />
-    <state x="548" y="153" key="FileChooserDialogImpl" timestamp="1615428843361">
+    <state x="223" y="67" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1536.824@0.0.1536.824" timestamp="1615631138653" />
+    <state x="668" y="158" width="457" height="507" key="EnvironmentVariablesDialog" timestamp="1615644923896">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="548" y="153" key="FileChooserDialogImpl/0.0.1536.824@0.0.1536.824" timestamp="1615428843361" />
-    <state width="1493" height="174" key="GridCell.Tab.0.bottom" timestamp="1615561840148">
+    <state x="668" y="158" width="457" height="507" key="EnvironmentVariablesDialog/0.0.1536.824@0.0.1536.824" timestamp="1615644923896" />
+    <state x="548" y="153" key="FileChooserDialogImpl" timestamp="1615644935846">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1493" height="174" key="GridCell.Tab.0.bottom/0.0.1536.824@0.0.1536.824" timestamp="1615561840148" />
-    <state width="1493" height="174" key="GridCell.Tab.0.center" timestamp="1615561840148">
+    <state x="548" y="153" key="FileChooserDialogImpl/0.0.1536.824@0.0.1536.824" timestamp="1615644935846" />
+    <state width="1493" height="174" key="GridCell.Tab.0.bottom" timestamp="1616255119338">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1493" height="174" key="GridCell.Tab.0.center/0.0.1536.824@0.0.1536.824" timestamp="1615561840148" />
-    <state width="1493" height="174" key="GridCell.Tab.0.left" timestamp="1615561840148">
+    <state width="1493" height="174" key="GridCell.Tab.0.bottom/0.0.1536.824@0.0.1536.824" timestamp="1616255119338" />
+    <state width="1493" height="174" key="GridCell.Tab.0.center" timestamp="1616255119338">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1493" height="174" key="GridCell.Tab.0.left/0.0.1536.824@0.0.1536.824" timestamp="1615561840148" />
-    <state width="1493" height="174" key="GridCell.Tab.0.right" timestamp="1615561840148">
+    <state width="1493" height="174" key="GridCell.Tab.0.center/0.0.1536.824@0.0.1536.824" timestamp="1616255119338" />
+    <state width="1493" height="174" key="GridCell.Tab.0.left" timestamp="1616255119338">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1493" height="174" key="GridCell.Tab.0.right/0.0.1536.824@0.0.1536.824" timestamp="1615561840148" />
-    <state x="431" y="145" width="672" height="678" key="search.everywhere.popup" timestamp="1615465256131">
+    <state width="1493" height="174" key="GridCell.Tab.0.left/0.0.1536.824@0.0.1536.824" timestamp="1616255119338" />
+    <state width="1493" height="174" key="GridCell.Tab.0.right" timestamp="1616255119338">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state x="431" y="145" width="672" height="678" key="search.everywhere.popup/0.0.1536.824@0.0.1536.824" timestamp="1615465256131" />
+    <state width="1493" height="174" key="GridCell.Tab.0.right/0.0.1536.824@0.0.1536.824" timestamp="1616255119338" />
+    <state x="270" y="57" key="SettingsEditor" timestamp="1615644946915">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="270" y="57" key="SettingsEditor/0.0.1536.824@0.0.1536.824" timestamp="1615644946915" />
+    <state x="431" y="145" width="672" height="678" key="search.everywhere.popup" timestamp="1616260246211">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="431" y="145" width="672" height="678" key="search.everywhere.popup/0.0.1536.824@0.0.1536.824" timestamp="1616260246211" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/ksDjango$1.coverage" NAME="1 Coverage Results" MODIFIED="1615558132111" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/app01/tools" />
     <SUITE FILE_PATH="coverage/ksDjango$tools.coverage" NAME="tools Coverage Results" MODIFIED="1615539683382" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/app01" />
-    <SUITE FILE_PATH="coverage/ksDjango$mytools__1_.coverage" NAME="mytools (1) Coverage Results" MODIFIED="1615561567617" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/app01" />
+    <SUITE FILE_PATH="coverage/ksDjango$mytools__1_.coverage" NAME="mytools (1) Coverage Results" MODIFIED="1616255036884" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/app01" />
   </component>
 </project>

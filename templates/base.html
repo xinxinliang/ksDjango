@@ -6,7 +6,31 @@
 </head>
 <body>
     <div class="container">
+        {% include 'components/navabar.html'%}
     {% block content %}{% endblock %}
     </div>
 </body>
 </html>
+<style>
+    *{
+    margin: 0;
+    padding: 0;
+}
+    body{
+        font-size: 14px
+    }
+li{
+    list-style-type: none;
+}
+a{
+    text-decoration: none;
+}
+
+</style>
+{% block theStyle %}
+
+{% endblock %}
+
+{% block theScript %}
+
+{% endblock %}

@@ -119,11 +119,14 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
+STATIC_ROOT=os.path.join(BASE_DIR,'static')
+STATICFILES_DIR=[os.path.join(BASE_DIR,'static'),]
 STATIC_URL = '/static/'
+
+
 
 class currentData():
 
     def __init__(self):
         self.theCookie = "kpf=PC_WEB; kpn=KUAISHOU_VISION; clientid=3; clientid=3;Max-Age=8640000; did=web_ec874916e390b9741609686125a0452e; didv=1613879531823; client_key=65890b29; userId=427400950; kuaishou.server.web_st=ChZrdWFpc2hvdS5zZXJ2ZXIud2ViLnN0EqABQrFWsr52Mhp5GfcmignSLoddGbbCBCTAkyedrcLkHqxI9IIdilOuxFUWwhS41WnVKwFJ0Win96_M-frAXGNXXDx78d0FjGOylLgeVtcXUGsIkgyxVkopf2IR_Pvps61IaXw1XTHZOdTrwQkDIdwESPDssQTuW9XNIfjJK9e88ZgJYNJI5bK5n38Zm37kl8omE8R8E8ZhL87TgGpaRZq3XRoSTdCMiCqspRXB3AhuFugv61B-IiBO8gZCTy1dvCTjyGg0IEN6MrmkUACDgSB3T2BYkkBQ-SgFMAE; kuaishou.server.web_ph=dfcba445b9b7f619411fdced6b1e61d6f207"
-        self.ksCookie = "clientid=3; did=web_ec874916e390b9741609686125a0452e; didv=1613879531823; client_key=65890b29; kpn=GAME_ZONE; userId=427400950; userId=427400950; kuaishou.live.bfb1s=ac5f27b3b62895859c4c1622f49856a4; kuaishou.live.web_st=ChRrdWFpc2hvdS5saXZlLndlYi5zdBKgAfwzFw_Kb2uHnKBQgQQ9-nhGuO2rbpCerVYO54A3KmQUQ6JOiQO-mLFbcwABZ9A-Fl2X5WxQ9yuXHLsMV-RsuZygWUnugryt27cp6rgKzgLI7y6ar8R1RdP6CUPp1JTjbgZ6uzAdhQdayNbiM-isllV5Yyj9bb4IK_LPqzxYDjf_uy0QRa_YxWiMtTUPQd8CFinqBXb7gj-o9HNOZG_v1y0aEk2hY_LIikBot7IUVtJ3ydB6KCIgmvgxlD_4Ac99qgHpdvBfsxGugwTfosyEsfq-BaaFMG0oBTAB; kuaishou.live.web_ph=ae0615d67633a6c0debe8d4668be19e1d446"
-
+        self.ksCookie = "clientid=3; did=web_a84ab30c11148a28c973b207b8913792; client_key=65890b29; kpn=GAME_ZONE; userId=427400950; kuaishou.live.web_st=ChRrdWFpc2hvdS5saXZlLndlYi5zdBKgAaPpEYy-UYx_bkxtnQP7J3TlMsPWnJct2malDdboJd95f6gtrY4f8JsWcPGVjc8Kn524DATADJYAsQvPDzwhc-lqAUIj6JZ1djYndPRyPo79_aoWS5PTn7o5gEnhoVuz2aSsqf9H0vGkzZBUrgGioWgqEOhqYHUdzGd0bTHFXlaY6gTa3pzZEh4dpDZv0mI62yvP36R2dahKdVkOCcED5UoaEvrof_XznEP1qd2QsxhyybtifyIgnqYWGmSnhYUuKU6CH30N4ehu9EWTAZYaxtDzsnZs8YYoBTAB; kuaishou.live.web_ph=823c5ace4afa0a327168389d21c94d243c06; userId=427400950; kuaishou.live.bfb1s=9b8f70844293bed778aade6e0a8f9942"

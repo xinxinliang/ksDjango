@@ -11,10 +11,12 @@ class UserTitle(models.Model):
     ]
 
     STATE = [
-        (0,"初次爬取"),
-        (1,"ksVideo"),
-        (2,"ksLive"),
-        (3,"ksVideo+ksLive")
+        (0,"0初次爬取"),
+        (1,"1ksVideo"),
+        (2,"1ksLive"),
+        (3,"2ksVideo+ksLive"),
+        (4,"3videoMP4"),
+        (5,"4vieo+liveMP4")
     ]
 
     USERIMG = "https://tx2.a.yximgs.com/uhead/AB/2020/08/17/09/BMjAyMDA4MTcwOTM2MDNfMjQ0NzAyMDZfMV9oZDM4Nl8xODU=_s.jpg"
@@ -37,7 +39,55 @@ class UserTitle(models.Model):
 
 
     def __str__(self):
+
         return self.userName
 
     class Mate:
         verbose_name = verbose_name_plural = "用户ID和名字"
+
+class UserVideo(models.Model):
+    STATE = [
+        (1,"默认ksVideo"),
+        (2,"ksVideo+ksLive")
+    ]
+    # 当被参照删除时，自己也被删除
+    theUser = models.ForeignKey(UserTitle,on_delete=models.CASCADE)
+
+    videoID = models.CharField(max_length=128,default="xxxxxxxxxxxxxx",verbose_name="视频id")
+    caption = models.CharField(max_length=512,default="暂无",verbose_name="视频描述")
+    coversUrl = models.CharField(max_length=512,default="xxxxxxxxxxx",verbose_name="视频封面")
+    videoPath = models.CharField(max_length=512,default="xxxxxxxxxxxxx",verbose_name="视频地址")
+    realLikeCount = models.CharField(max_length=64,default="xxxxxxxxxxx",verbose_name="具体点赞数量")
+    animatedCoverUrl = models.CharField(max_length=512,default="xxxxxxxx",verbose_name="封面动画")
+
+    stateVideo = models.IntegerField(choices=STATE,default=1,verbose_name="状态")
+
+    displayView = models.CharField(max_length=64,default="-1",verbose_name="播放量")
+    displayComment = models.CharField(max_length=64,default="-1",verbose_name="评论数")
+
+    def __str__(self):
+        return self.videoID
+
+    class Mate:
+        verbose_name = verbose_name_plural = "视频信息"
+
+
+class UserPhoto(models.Model):
+    thephotoUser = models.ForeignKey(UserTitle,on_delete=models.CASCADE)
+
+    photoID = models.CharField(max_length=128,verbose_name="相册id",default="xxxxxxxx")
+    caption = models.CharField(max_length=512,verbose_name="相册描述",default="暂无")
+    displayView = models.CharField(max_length=32,verbose_name="播放量",default="-1")
+    displayLike = models.CharField(max_length=32,verbose_name="点赞数",default="-1")
+    displayComment = models.CharField(max_length=32,verbose_name="评论数",default="-1")
+
+
+
+    imgUrls = models.CharField(max_length=5000,default=" ")
+
+
+    def __str__(self):
+        return self.photoID
+
+    class Mate:
+        verbose_name = verbose_name_plural = "相册信息"
