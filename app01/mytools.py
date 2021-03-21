@@ -1,5 +1,6 @@
 import requests
 import time
+from app01 import KSCOOKIE,THECOOKIE
 '''参数说明
 endResult
 -2:第一次请求就失败
@@ -34,7 +35,7 @@ class userdetailSpider():
 
     endResult = []
     endStatus = -1
-    def __init__(self,userID,myCookie,tDelay=3):
+    def __init__(self,userID,myCookie,tDelay=5):
         userdetailSpider.headers["Referer"] = "https://video.kuaishou.com/profile/"+userID
         userdetailSpider.payload["variables"]["userId"] = userID
         userdetailSpider.headers["Cookie"] = myCookie
@@ -53,7 +54,8 @@ class userdetailSpider():
             #*******************************************************************#
             # 这个result参数判断请求是否正确，如果不是1请求失败，后面继续执行会报错，程序结束
             # print(m_json["data"]["visionProfilePhotoList"]["result"])
-            if m_json["data"]["visionProfilePhotoList"]["result"] == 1:
+            feeds_list = m_json["data"]["visionProfilePhotoList"]["feeds"]
+            if len(feeds_list) != 0:
                 # print("请求成功，开始筛选数据")
                 pass
             else:
@@ -62,7 +64,7 @@ class userdetailSpider():
                 return -1
 
 
-            feeds_list = m_json["data"]["visionProfilePhotoList"]["feeds"]
+
 
             # 获取pcursor并且填写到下一次的header中
             pcursor = m_json["data"]["visionProfilePhotoList"]["pcursor"]
@@ -109,6 +111,8 @@ class userdetailSpider():
                 break
             if temp == -2:
                 print("请求失败,程序终止")
+                break
+
 
 # 输出快手ID和cookie,获取live界面的视频信息
 class userdetailLiveSpider():
@@ -156,7 +160,7 @@ class userdetailLiveSpider():
             pcursor = m_json["data"]["publicFeeds"]["pcursor"]
             self.payload["variables"]["pcursor"] = pcursor
             # print(m_json)
-            # print(feeds_list)
+            # print(len(feeds_list))
             if len(feeds_list) == 0:
                 return -1
             #-------------筛选数据---------------#
@@ -301,24 +305,25 @@ class getUserIDRandom():
         "Host": "video.kuaishou.com",
         "Origin": "https://video.kuaishou.com",
         "Referer": "https://video.kuaishou.com/brilliant",
-        "User-Agent": "PostmanRuntime/7.26.8"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36 Edg/89.0.774.57"
     }
     # 这里的userID也要更改
     payload = {"operationName":"brilliantTypeDataQuery","variables":{"hotChannelId":"00","page":"brilliant","pcursor":"1"},"query":"fragment feedContent on Feed {\n  type\n  author {\n    id\n    name\n    headerUrl\n    following\n    headerUrls {\n      url\n      __typename\n    }\n    __typename\n  }\n  photo {\n    id\n    duration\n    caption\n    likeCount\n    realLikeCount\n    coverUrl\n    photoUrl\n    coverUrls {\n      url\n      __typename\n    }\n    timestamp\n    expTag\n    animatedCoverUrl\n    distance\n    videoRatio\n    liked\n    stereoType\n    __typename\n  }\n  canAddComment\n  llsid\n  status\n  currentPcursor\n  __typename\n}\n\nfragment photoResult on PhotoResult {\n  result\n  llsid\n  expTag\n  serverExpTag\n  pcursor\n  feeds {\n    ...feedContent\n    __typename\n  }\n  webPageArea\n  __typename\n}\n\nquery brilliantTypeDataQuery($pcursor: String, $hotChannelId: String, $page: String, $webPageArea: String) {\n  brilliantTypeData(pcursor: $pcursor, hotChannelId: $hotChannelId, page: $page, webPageArea: $webPageArea) {\n    ...photoResult\n    __typename\n  }\n}\n"}
     endResult = []
-    def __init__(self, myCookie):
+    def __init__(self, myCookie,myDelay=1):
         userdetailSpider.headers["Cookie"] = myCookie
-
+        self.myDelay = myDelay
     def get_data(self):
         try:
+            time.sleep(self.myDelay)
             res = requests.post(self.URL, headers=self.headers, json=self.payload)
             res.encoding = "utf-8"
             m_json = res.json()  # 字典格式
-            # print(m_json)
-            stateResult = m_json["data"]["brilliantTypeData"]["result"]
-            if stateResult != 1:
-                return -1
+            print(m_json)
             feed_list = m_json["data"]["brilliantTypeData"]["feeds"]
+            if len(feed_list) == 0:
+                print("爬取数据不完整")
+                return -1
 
             for feed in feed_list:
                 result = {}
@@ -326,20 +331,25 @@ class getUserIDRandom():
                 result["userName"] = feed["author"]["name"]
                 self.endResult.append(result)
                 del result
+            print("爬取成功")
+            return 1
         except:
             print("请求出错")
+            return -2
 
 if __name__ == "__main__":
-    theCookie = "kpf=PC_WEB; kpn=KUAISHOU_VISION; clientid=3; clientid=3;Max-Age=8640000; did=web_ec874916e390b9741609686125a0452e; didv=1613879531823; client_key=65890b29; userId=427400950; kuaishou.server.web_st=ChZrdWFpc2hvdS5zZXJ2ZXIud2ViLnN0EqABQrFWsr52Mhp5GfcmignSLoddGbbCBCTAkyedrcLkHqxI9IIdilOuxFUWwhS41WnVKwFJ0Win96_M-frAXGNXXDx78d0FjGOylLgeVtcXUGsIkgyxVkopf2IR_Pvps61IaXw1XTHZOdTrwQkDIdwESPDssQTuW9XNIfjJK9e88ZgJYNJI5bK5n38Zm37kl8omE8R8E8ZhL87TgGpaRZq3XRoSTdCMiCqspRXB3AhuFugv61B-IiBO8gZCTy1dvCTjyGg0IEN6MrmkUACDgSB3T2BYkkBQ-SgFMAE; kuaishou.server.web_ph=dfcba445b9b7f619411fdced6b1e61d6f207"
     theUserID = "3xriu7h3usw65fu"
-    ksUserID = "HBL66888"
+    ksUserID = "DD666-com"
     #userdetailLiverCookie = "clientid=3; did=web_ec874916e390b9741609686125a0452e; didv=1613879531823; client_key=65890b29; kpn=GAME_ZONE; userId=427400950; userId=427400950; kuaishou.live.bfb1s=477cb0011daca84b36b3a4676857e5a1; kuaishou.live.web_st=ChRrdWFpc2hvdS5saXZlLndlYi5zdBKgAdzAK_gR4Ij6ikaIFBnhSOQxjHjg4FMAJvD1I-Yb6wkeKkKmy1Y6CHVQVFHo9jkSGfI454cXJaxmHXgE3XD8TcB4HpCEJInTt3sr5OB036DE-W1vQO6_ZNcIcC7FBFZkYcphYw8fcoS7aTlggtrqEg1dZ1-9TWPUQeSV7YuGWRsPTAbyNVdVkRBbGzo05zoRDYpD7h7Sh4VRnVNWGQhehsEaEm-zwBmcbUA4lm5ejQnh9kVjySIgeeee0vVwC8b9JjYLJRhQYNFs4Yg7ugEhW9jEGgDPo_YoBTAB; kuaishou.live.web_ph=9a524ac5ba8b5428550c80f8aa3a8cbbbd98"
-    ksCookie = "clientid=3; did=web_ec874916e390b9741609686125a0452e; didv=1613879531823; client_key=65890b29; kpn=GAME_ZONE; userId=427400950; userId=427400950; kuaishou.live.bfb1s=9b8f70844293bed778aade6e0a8f9942; kuaishou.live.web_st=ChRrdWFpc2hvdS5saXZlLndlYi5zdBKgAe80TZ_u8McFZcsMijAFvmllcC7B7XWwf5RLpOBglOaq2_rSvyww6weHGzttGmZ3oakyVVQ6L29TShONEbMPwG2AjP9irZ84ImqAbKAGUh7vt6kV-aaqwXuxvDf1Fgp5HgO_gyUKRv0RkWZvaS4JJFZG8ymK3yv3_ggyixAiJkFwSDz-j-8MuKZzY8wHIiM6LHckuOfAxtXK4fsGbT7AOrsaEpGRdADNj0HroX-OzPO0ZFU2uiIgwshWG4pXfG_qa3Bi8FNVAkz-COuTODS33sqz2-lKebooBTAB; kuaishou.live.web_ph=ce412f4b5cc780c5c24246e904f86e93c634"
-    # test = userdetailLiveSpider(theUserID,ksCookie)
+    ksCookie = "clientid=3; did=web_a84ab30c11148a28c973b207b8913792; client_key=65890b29; kpn=GAME_ZONE; kuaishou.live.web_st=ChRrdWFpc2hvdS5saXZlLndlYi5zdBKgAaPpEYy-UYx_bkxtnQP7J3TlMsPWnJct2malDdboJd95f6gtrY4f8JsWcPGVjc8Kn524DATADJYAsQvPDzwhc-lqAUIj6JZ1djYndPRyPo79_aoWS5PTn7o5gEnhoVuz2aSsqf9H0vGkzZBUrgGioWgqEOhqYHUdzGd0bTHFXlaY6gTa3pzZEh4dpDZv0mI62yvP36R2dahKdVkOCcED5UoaEvrof_XznEP1qd2QsxhyybtifyIgnqYWGmSnhYUuKU6CH30N4ehu9EWTAZYaxtDzsnZs8YYoBTAB; kuaishou.live.web_ph=823c5ace4afa0a327168389d21c94d243c06; userId=427400950; kuaishou.live.bfb1s=3e261140b0cf7444a0ba411c6f227d88"
+    test = userdetailSpider(theUserID,THECOOKIE)
+    # test = userdetailLiveSpider(ksUserID,KSCOOKIE)
+    # print(KSCOOKIE)
     # test = ksLiveSpider(ksUserID,ksCookie)
+    test.start_spider()
+    print(test.endResult)
+
+    # test = getUserIDRandom(theCookie)
     # test.get_data()
     # print(test.endResult)
-    test = getUserIDRandom(theCookie)
-    test.get_data()
-    print(test.endResult)
 

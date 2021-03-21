@@ -60,15 +60,25 @@ def showVideo(request):
     allCover = UserVideo.objects.values("coversUrl")
     return render(request,'pages/showVideo.html',{"result":allCover})
 
-
-def getUserRandom(request,counts):
+# getUserRandomResult = []
+def getUserRandom(request):
     if request.method == 'POST':
-        print("-----------")
-    cDate = currentData()
-    theGetScript = getUserIDRandom(cDate.theCookie)
-    theGetScript.get_data()
-    results = theGetScript.endResult
-    messgae = json.dumps(results)
-    # return render(request,results)
-    return HttpResponse(messgae)
+        counts = int(request.POST.get("counts"))
+        myDelay = int(request.POST.get("myDelay"))
+
+        cDate = currentData()
+        theGetScript = getUserIDRandom(cDate.theCookie,myDelay=myDelay)
+
+        for i in range(counts):
+            theGetScript.get_data()
+        # getUserRandomResult = theGetScript.endResult
+        print(len(theGetScript.endResult))
+        myRes = json.dumps({"result":"成功","data":theGetScript.endResult})
+        theGetScript.endResult.clear()
+        # print(getUserRandomResult[0])
+        # print(len(getUserRandomResult))
+        return HttpResponse(myRes)
+    else:
+        myRes = json.dumps({"result": "失败","data":{}})
+        return HttpResponse(myRes)
 

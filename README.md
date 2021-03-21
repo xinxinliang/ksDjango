@@ -1202,3 +1202,201 @@ http://tx2.a.yximgs.com/ufile/atlas/NTE5MzQ5NDg0MTc0OTc3NzcxOV8xNjE1NjI4ODcwNjA0
 #### 随机获取userID
 
 1. dict与json数据之间的转换：https://blog.csdn.net/qq_33689414/article/details/78307018
+
+## 2021.3.21
+
+#### js发送post
+
+1. 参考博客：http://www.zzvips.com/article/64603.html
+2. 然后我又找了个弹出框的插件，现在可以再弹出框填写数据，发送post请求。
+
+```
+        $("#openDialog1").dialog({
+            id: "superDialog", //必填,必须和已有id不同
+            title: "我的标题", //对话框的标题 默认值: 我的标题
+            type: 0, //0 对话框有确认按钮和取消按钮 1 对话框只有关闭按钮
+            easyClose: true, // 点击遮罩层也可以关闭窗口,默认值false
+            form: [{
+                description: "用户名",
+                type: "text",
+                name: "username",
+                value: "tom"
+            }, {
+                description: "密码",
+                type: "text",
+                name: "password",
+                value: "123456"
+            }, {
+                description: "姓名",
+                type: "text",
+                name: "name",
+                value: "tom"
+            }, {
+                description: "年龄",
+                type: "text",
+                name: "age",
+                value: "18"
+            }], //form 是填充表单的数据,必填
+            submit: function (data) {
+                //data是表单收集的数据
+                console.log(data);
+
+                $.ajax({url: 'http://127.0.0.1:8000/api/getUserRandom/3/',
+                        type: 'POST',
+                        {#dataType: 'json',#}
+                        data:data,
+                        beforeSend: function (xhr, setting) {
+                            xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}")},
+                        success: function (msg) {
+                            console.log(msg)},
+                })
+                //这个可自行删去
+                if (true) {
+                    alert("提交成功\n（你自己可以去掉这个alert）");
+                    //清空表单数据 传递参数=上述指定的id值
+                    clearAllData("superDialog");
+                }
+
+            }
+        })
+```
+
+> `xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}")},`这一步很重要
+
+3. 处理一下返回的数据为json格式
+
+```
+def getUserRandom(request,counts):
+    if request.method == 'POST':
+        print("-----------")
+        cDate = currentData()
+        theGetScript = getUserIDRandom(cDate.theCookie)
+        theGetScript.get_data()
+        results = theGetScript.endResult
+        messgae = json.dumps(results)
+        # return render(request,results)
+        myRes = json.dumps({"result":2})
+        return HttpResponse(myRes)
+    else:
+        myRes = json.dumps({"result": 1})
+        return HttpResponse(myRes)
+```
+
+4. 出现上一次相应的数据也添加到下一次相应的数据中了。
+
+> 我把result在函数外定义为全局变量还是不行。result每次的内容不会被清空，对象的endResult会被清空，我就直接把这个作为返回值
+
+5. 还是这个问题，我赋值给返回值，把属性值都清空了都还是那样。
+
+#### 又有问题
+
+1. 获取精彩视频页面也会被限制，我去浏览器刷新也刷新不出视频。看来，看来一切不是那么如意。需要赶快结束这个项目，展示页面就重新开启一个项目把。这个项目就用来写爬虫，把数据存储到数据库。
+2. 估计真的是要http代理了。尝试了一下，貌似不是封锁ip的问题。确实不是，我连接手机热点还是那个样子。
+3. 我发现了，退出登录，然后再访问就是正常的。但是我复制cookie，代码还是无法获取信息。真是搞不懂。可能是某个账户对某个页面请求的次数太多就出现问题把。
+4. 问题是现在不知道怎么恢复，填上退出登录的cookie页不行。
+
+#### 睡了一觉
+
+1. 我去睡了一觉，醒来后再去执行代码，成功可以获取信息。那么就可以继续进行了，其他获取不到数据可能也是这样就可以了，**不是cookie问题**，因为自己再下一次写代码的时候，执行爬虫脚本开始都是成功的。
+2. 卧槽！我再mytools中测试类成功得到数据，在后端执行动作老是不成功，cookie更换得也是一样的。还有最后一个头像地址，正好看到一个错位的。真想放弃，都做到这里了。继续找原因吧。
+3. 我去吃了个饭，星期天下午的菜真的不行。点了两个肉菜，肉不好吃把里面的青菜给吃了，还伴着油水把饭吃了。去买泡面的时候迷糊地多付了一元钱，拿了两根棒棒糖。
+4. 我上来在测试的时候，后台动作添加video是成功的，感觉还好，我就觉得自己的代码写得没有问题，可能是测试的用户不同，添加photo有问题。
+5. 使用result判断是否有数据出现错误，没有数据状态也改变了。直接使用长度来判断。
+6. 在setting中调用类中的ksCookie的问题，我在mytools中调用也是获取不到数据。
+7. 可能是全局变量引入的方式，我get到了再\__init__文件下面设置变量，这样引入就可以了
+
+```
+from app01 import KSCOOKIE
+```
+
+8. 成功，后端执行不成功，就是导入变量的问题。
+
+#### 其他
+
+1. 发现问题，获取photo的时候，需要每次更新cookie，就是从成功请求到数据的浏览器中获取。多增加一个用户都不行。
+
+> 好吧，我说把kscookie复制到了THECOOKIE
+
+2. 我不知道以前是怎么搞的，延时就可以使用一个cookie多次获取视频信息。
+
+> 如果video+photo不等于应该作品数量，就需要再live界面获取视频，对比入库。这是可能遇到的问题，先写一下。
+
+3. 我观察了一下，每次就是cookie中这个参数改变了。
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210321192129.png)
+
+4. 确实，还是要想办法获取cookie。
+5. 我以为这个工程要烂尾了，因为cookie最后的一个值我没有对比到。但是，我把上面的最上面请求的cookie复制过来还是可以运行。
+6. 好吧，还是一次性的。我都怀疑自己之前是怎么做到使用延迟，可以多次复用。
+7. 不行不行，还是对应请求的cookie好用。
+8. 确实好用，就是不知道怎么获取。变的就是最后面的那条数值
+9. 我还是按照这篇博客一步步地做把，说不定成功了，博客：https://blog.csdn.net/qq_43661709/article/details/113278957
+10. 获取二维码成功，要不是博客中说要加data:image/png;base64,我恐怕怎么也想不出来。
+11. 这个信息填在这里也多亏了这篇博客
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210321203138.png)
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210321203221.png)
+
+12. 扫描的结果中提取了登录信息，响应后返回的是用户信息，然后携带登录信息登录。
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210321204036.png)
+
+13. acceptResult请求获取qrtoken
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210321203958.png)
+
+
+
+14. qrtoken的值再这个表单里被发送出去
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210321204228.png)
+
+- 返回的信息
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210321204345.png)
+
+15. 然后就是这个GET请求，携带的数据博客里面有解释
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210321205406.png)
+
+16. 三个变动的参数，每次都要交替更换，通过这样一波操作来获取动态的cookie。
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210321205613.png)
+
+17. 把这三个字段替换，然后作为下一次请求个人信息的cookie才有效。
+
+#### 用户界面分析
+
+1. 这是刷新一下，下滑一下发送的数据
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210321210348.png)
+
+> 我猜测passToken和sts？依次更新了cookie，然后在请求数据。下面第一个graphql是登录用户的个人信息，第二个是第一页面视频列表，下面v？又跟新了依次cookie，然后用这个cookie就可以一直获取视频列表了。
+
+2. 现在要知道passToken中的cookie中的passToken参数值怎么获取。
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210321211816.png)
+
+> 我现在知道cookie是怎么获取的了，不是自己构建，而是根据响应数据中set-Cookie参数设定的。之前健康打卡系统就是没有使用上一次生成的cookie而失败的，不能自己构建。
+
+3. cookie肯定是get请求获取的，因为我筛选的是XRH没有看到GET请求。好吧，全部里面也没有，无法获取。
+4. 我使用这个gra中的cookie，可以爬取一个完整用户的视频。这个cookie可以获取到。有的不能，可能是最后依次请求到的数据为空，然后判断爬取信息不完整。
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210321222354.png)
+
+5. 这样每次只能爬取一个用户的视频，然后再更新cookie。
+6. 使用初次登录后更新cookie就可以获取数据。也是一次性的。现在要知道怎么更新。
+
+#### psotman发现
+
+1. 我用post模拟，到passToken的模拟才有效，前面的是token错误的返回值。
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210321225410.png)
+
+2. ok，**模拟passtoken得到响应的"kuaishou.server.web.at“的值，作为下一次sts的params，然后sts就可以成功返回需要跟新的cookie三个字段，再和cookie固定的值凭借，就可以生成一个有效的cookie爬取一个主播的用户全部视频信息。**
+
+3. ok，下次就就需要把cookie拼接起来，封装成类就可以了
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210321232253.png)
+

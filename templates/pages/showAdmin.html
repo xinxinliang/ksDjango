@@ -11,6 +11,12 @@
                 <li>
                     <button id="getUserRandom">显示全部信息</button>
                 </li>
+                <li>
+                    <button type="button" id="openDialog1">点我打开对话框1</button>
+                </li>
+                <li>
+                    <button type="button" id="openDialog2">点我打开对话框2</button>
+                </li>
                 <li><h4>获取数据脚本</h4></li>
                 <li>
                     <button>随机获取title</button>
@@ -47,7 +53,7 @@
                                 <td>status</td>
                                 <td>{{ mes.realVideoCount }}</td>
                                 <td>{{ mes.myVideoCount }}</td>
-                            <td>{{ mes.myPhotoCount }}</td>
+                                <td>{{ mes.myPhotoCount }}</td>
                             </tr>
                         {% endfor %}
                         </tbody>
@@ -69,16 +75,190 @@
         }
 
     </style>
+    <style>
+        .box input {
+            outline: none;
+        }
+
+        .black_overlay {
+            display: none;
+            /* 此元素不会被显示*/
+            position: fixed;
+            top: 0%;
+            left: 0%;
+            width: 100%;
+            height: 100%;
+            background-color: #bbbbbb;
+            z-index: 1001;
+            /* z-index 属性设置元素的堆叠顺序。*/
+            opacity: 0.8;
+            /* opacity 属性设置元素的不透明级别。*/
+        }
+
+        .white_content {
+            display: none;
+            position: fixed;
+            top: 20%;
+            border: 1px solid #bbbbbb;
+            border-radius: 10px;
+            background-color: white;
+            z-index: 1002;
+            /*层级要比.black_overlay高，这样才能显示在它前面*/
+            overflow: auto;
+        }
+
+        .box {
+            width: 350px;
+            height: auto;
+            /* 如果想去掉滚轴请用min-height */
+            /* min-height: 350px;  */
+            position: absolute;
+            left: 50%;
+            margin-left: -150px;
+            text-align: center;
+            box-shadow: 10px 10px 33px 0px rgba(0, 0, 0, 0.2);
+            -webkit-box-shadow: 10px 10px 33px 0px rgba(0, 0, 0, 0.2);
+            -moz-box-shadow: 10px 10px 33px 0px rgba(0, 0, 0, 0.2);
+        }
+
+        .box div {
+            text-align: left;
+            margin-left: 40px;
+            line-height: 35px;
+        }
+
+        .box div font {
+            display: inline-block;
+            /* min-width: 100px;
+            max-width: 160px; */
+            width: 90px;
+        }
+
+        .box div span {
+            display: inline-block;
+            margin-left: 4px;
+            margin-bottom: 4px;
+        }
+
+        .box .font_title {
+            letter-spacing: 6px;
+            color: #999999;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .box .btn {
+            width: auto;
+            height: 34px;
+            border-width: 0px;
+            border-radius: 6px;
+            padding: 0 10px 0;
+            background: #4ECDC4;
+            cursor: pointer;
+            outline: none;
+            color: white;
+            font-size: 16px;
+            margin-right: 6px;
+
+            /*文本不被选中*/
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            -khtml-user-select: none;
+            -o-user-select: none;
+            user-select: none;
+        }
+
+        .box .bottom_btn {
+            width: 130px;
+            margin-bottom: 20px;
+            position: relative;
+            top: 0px;
+            left: 75px;
+        }
+
+        .box .form_submit {
+            margin-bottom: 30px;
+        }
+
+        /**
+         * 脱离文档流
+         * 依照bottom定位
+         * 给点padding
+         */
+    </style>
 {% endblock %}
 {% block theScript %}
-<script>
-$("#getUserRandom").click(function () {
-$.ajax({
-  type: 'POST',
-  url: 'http://127.0.0.1:8000/api/getUserRandom/3/',
-  data: {"id":1},
-  dataType: jsonFormat
-});
-})
-</script>
+    <script type="text/javascript">
+        $("#openDialog1").dialog({
+            id: "superDialog", //必填,必须和已有id不同
+            title: "我的标题", //对话框的标题 默认值: 我的标题
+            type: 0, //0 对话框有确认按钮和取消按钮 1 对话框只有关闭按钮
+            easyClose: true, // 点击遮罩层也可以关闭窗口,默认值false
+            form: [{
+                description: "请求次数",
+                type: "text",
+                name: "counts",
+                value: 5
+            }, {
+                description: "设置延时",
+                type: "text",
+                name: "myDelay",
+                value: 1
+            }], //form 是填充表单的数据,必填
+            submit: function (data) {
+                //data是表单收集的数据
+                console.log(data);
+
+                $.ajax({url: 'http://127.0.0.1:8000/api/getUserRandom/',
+                        type: 'POST',
+                        dataType: 'json',
+                        data:data,
+                        beforeSend: function (xhr, setting) {
+                            xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}")},
+                        success: function (msg) {
+                            console.log(msg.result);
+                            console.log(msg.data);
+
+                            if (true) {
+                                alert("提交成功\n");
+                                //清空表单数据 传递参数=上述指定的id值
+                            //clearAllData("superDialog");
+                            }
+                        },
+                })
+                //这个可自行删去
+
+
+            }
+        })
+
+
+        $("#openDialog2").dialog({
+            id: "dialog", //必填,必须和已有id不同
+            title: "我的对话框", //对话框的标题 默认值: 我的标题
+            type: 1, //0 对话框有确认按钮和取消按钮 1 对话框只有关闭按钮
+            form: [{
+                description: "请求次数",
+                type: "text",
+                name: "counts",
+                value: "5"
+            }, {
+                description: "请求延时",
+                type: "text",
+                name: "myDelay",
+                value: "1"
+            }, {
+                description: "姓名",
+                type: "text",
+                name: "name",
+                value: "也可以不设置"
+            }, {
+                description: "年龄",
+                type: "text",
+                name: "age"
+            }] //form 是填充表单的数据,必填
+        })
+    </script>
 {% endblock %}

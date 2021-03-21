@@ -25,5 +25,5 @@ urlpatterns = [
     path('showVideo/',showVideo),
     path('showAdmin/',showAdmin),
 
-    path('api/getUserRandom/<int:counts>/',getUserRandom)
+    path('api/getUserRandom/',getUserRandom)
 ]

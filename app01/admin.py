@@ -5,6 +5,7 @@ from ksDjango.settings import currentData
 # Register your models here.
 from .models import UserTitle,UserVideo,UserPhoto
 import time
+from app01 import KSCOOKIE,THECOOKIE
 
 
 class UserTitleAdmin(admin.ModelAdmin):
@@ -19,9 +20,8 @@ class UserTitleAdmin(admin.ModelAdmin):
 
     # 执行的动作需要这两个参数,第二个为.query.QuerySet对象，就是选中的数据，通过for循环，通过.调用属性
     def myksVideo(self,request,queryset):
-        cData = currentData()
         for qu in queryset:
-            ksVideo = ksVideoSpider(qu.userID,cData.ksCookie)
+            ksVideo = ksVideoSpider(qu.userID,KSCOOKIE)
             result = ksVideo.get_data()
             #-----填写数据-------------#
             qu.user_text = result["user_text"]
@@ -45,9 +45,8 @@ class UserTitleAdmin(admin.ModelAdmin):
     myksVideo.short_description = "添加ksVideo字段"
 
     def myksLive(self,request,queryset):
-        cData = currentData()
         for qu in queryset:
-            ksLive = ksLiveSpider(qu.userID,cData.ksCookie)
+            ksLive = ksLiveSpider(qu.userID,KSCOOKIE)
             result = ksLive.get_data()
             #-----填写数据-------------#
             qu.ksID = result["ksId"]
@@ -76,9 +75,8 @@ class UserTitleAdmin(admin.ModelAdmin):
     myksLive.short_description = "添加ksLive字段"
 
     def myvideoMP4(self,request,queryset):
-        cData = currentData()
         for qu in queryset:
-            thevideo = userdetailSpider(qu.userID,cData.theCookie)
+            thevideo = userdetailSpider(qu.userID,THECOOKIE)
             thevideo.start_spider()
             # 只有爬取到完整的数据才能写入数据库
             if thevideo.endStatus is not 0:
@@ -117,7 +115,6 @@ class UserTitleAdmin(admin.ModelAdmin):
     myvideoMP4.short_description = "添加视频video"
 
     def myPhoto(self,request,queryset):
-        cData = currentData()
         for qu in queryset:
             ttUser = UserTitle.objects.get(userID=qu.userID)
             # 只有状态4才能入库
@@ -125,7 +122,7 @@ class UserTitleAdmin(admin.ModelAdmin):
                 break
 
             thisuserID = ttUser.ksID
-            thevideo = userdetailLiveSpider(thisuserID,cData.ksCookie)
+            thevideo = userdetailLiveSpider(thisuserID,KSCOOKIE)
             thevideo.start_spider()
 
             if thevideo.endStatus is not 0:
