@@ -1400,3 +1400,26 @@ from app01 import KSCOOKIE
 
 ![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210321232253.png)
 
+## 2021.3.24
+
+#### updateCookie类
+
+1. jupyterlab的相关的文件放在notebook/01/passToken下
+2. 测试好了，写类的时候遇到一个问题，第一个替换我没有做处理，相关字段没有server.web_st=。但是替换另一个的时候也每做处理，最后却添加了server.web_st=。结果是想要的，但不知道为什么
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210324081339.png)
+
+3. 不好意思，是代码写错了。
+
+![](https://gitee.com/liangxinixn/blog002/raw/master/image01/20210324082430.png)
+
+4. 写好了，执行爬取video的时候更新一下cookie
+5. 准备体验一下成果的时候，发现失败，程序终止。回头看一下，原来是掉了分号
+
+```
+ "server.web_st="+st+";"
+```
+
+6. 我都想好了等下测试成功了怎么写什么，但是失败了。
+7. 我尝试了删除类，每次请求都更新依次cookie，但还是失败。不知道为什么，难道请求的cookie与动作有关，或者前后cookie是由关联的。
+8. 好吧，我先暂停一下，好好整理一下爬虫相关的代码。既然不用持续更新视频，执行依次得到结果，那么就可以不把获取视频的代码写在工程里面了。

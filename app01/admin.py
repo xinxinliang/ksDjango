@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from app01.mytools import ksLiveSpider,ksVideoSpider,userdetailSpider,userdetailLiveSpider
+from app01.mytools import ksLiveSpider,ksVideoSpider,userdetailSpider,userdetailLiveSpider,updateCookie
 from ksDjango.settings import currentData
 # Register your models here.
 from .models import UserTitle,UserVideo,UserPhoto
@@ -75,8 +75,11 @@ class UserTitleAdmin(admin.ModelAdmin):
     myksLive.short_description = "添加ksLive字段"
 
     def myvideoMP4(self,request,queryset):
+        theUpdateCookie = updateCookie()
+        theUpdateCookie.updateCo()
+        print(theUpdateCookie.theResult)
         for qu in queryset:
-            thevideo = userdetailSpider(qu.userID,THECOOKIE)
+            thevideo = userdetailSpider(qu.userID,theUpdateCookie.theResult)
             thevideo.start_spider()
             # 只有爬取到完整的数据才能写入数据库
             if thevideo.endStatus is not 0:
@@ -111,6 +114,7 @@ class UserTitleAdmin(admin.ModelAdmin):
             ttUser.stateUser = 4
             ttUser.save()
             del ttUser
+            del theUpdateCookie
 
     myvideoMP4.short_description = "添加视频video"
 

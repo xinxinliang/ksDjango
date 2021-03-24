@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}视频展示{% endblock %}
+
+{% block content %}
+    <h1>视频展示页面</h1>
+    <div class="row">
+        {% for cover in result %}
+            <div class="col-md-2">
+            <img src="{{ cover.coversUrl }}" class="img-rounded">
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+
+
+{% block theStyle %}
+    <style>
+        img {
+            width: 100%;
+        }
+    </style>
+{% endblock %}

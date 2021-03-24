@@ -1,6 +1,7 @@
 import requests
 import time
 from app01 import KSCOOKIE,THECOOKIE
+import re
 '''参数说明
 endResult
 -2:第一次请求就失败
@@ -143,7 +144,10 @@ class userdetailLiveSpider():
     endStatus = -1
     def get_data(self):
         try:
-            time.sleep(1)
+            myTest = updateCookie()
+            myTest.updateCo()
+            self.headers["Cookie"] = myTest.theResult
+            time.sleep(5)
             res = requests.post(self.URL, headers=self.headers, json=self.payload)
             res.encoding = "utf-8"
             m_json = res.json()  # 字典格式
@@ -337,19 +341,77 @@ class getUserIDRandom():
             print("请求出错")
             return -2
 
+# 这个类用来更新cookie
+class updateCookie():
+    URL = "https://id.kuaishou.com/pass/kuaishou/login/passToken?sid=kuaishou.server.web"
+    headers = {
+        "User-Agent": "PostmanRuntime/7.26.8",
+        "Cookie": r"clientid=3; did=web_ec874916e390b9741609686125a0452e; didv=1613879531823; client_key=65890b29; userId=427400950; userId=427400950; passToken=ChNwYXNzcG9ydC5wYXNzLXRva2VuErAB09Fn22HHUFs4Muop_XipNpYKJcYFg9Jxuu1cpGUyrlyqwscZGXc02So9rJOGl-aV3Ad5POwpdoopjqlQ7wq35oV0B0mEwKqN-6i7NVeJKJTaNltILNf56B54DZgSGUtMri9iTzj0vtrvpCHEqn7L1rVYT-nGlKOOkFEYauGEOnmDnvjUc7QD2L1sSXzzc4NrUUZhi6O3-kyBsJsymw4a4JkMDJKliJ0QZTu7IYuvqcgaEq_TRjgPx0oylueuj07Lsb3GDSIgnerr8DS_ycF2jLwXujOPPMFSEyNXlE2yqH8OssiW5fQoBTAB",
+    }
+
+    URL2 = 'https://video.kuaishou.com/rest/infra/sts'
+    headers2 = {
+        "Connection": "keep-alive",
+        "User-Agent": "PostmanRuntime/7.26.8",
+        "Cookie": r"kpf=PC_WEB; kpn=KUAISHOU_VISION; clientid=3; did=web_ec874916e390b9741609686125a0452e; didv=1613879531823; client_key=65890b29; userId=427400950; kuaishou.server.web_st=ChZrdWFpc2hvdS5zZXJ2ZXIud2ViLnN0EqABssQl6l3ZcO5tFu_4shEFNlhh-s0CWRRIm36xWGDANPDx6QPnCbqh0mA-TYGd4vv2WrowlcuyPxKMOE1kdVg_AOuxtlRnpS7f8zMVPhZApB2r6ECnb4E_47FJYPeb90TLm5YVDLfYFHAVgpm75p738ANPRImWdfffvHiEqncJdn1gW7yu0CYtyWqdtQbbD2Mus8s7UWF76_yDR1eQsoV9ABoStEyT9S95saEmiR8Dg-bb1DKRIiBuycuMJFuiLwe5GcmxD88aQEj5tcH62oYBN1kzrniFkCgFMAE; kuaishou.server.web_ph=2b4ed626e5e599d8fb6b4d7bfb25ac557f0f"
+    }
+    theResult = ""
+    def __init__(self):
+        self.theCookie = THECOOKIE
+
+    def updateCo(self):
+        # 获取authtoken，作为参数请求新的cookie字段
+        res = requests.post(self.URL, headers=self.headers)
+        res.encoding = "utf-8"
+        m_json = res.json()  # 字典格式
+        # print(m_json["kuaishou.server.web.at"])
+
+        # 获取新的cookie字段
+        params = {
+            "authToken": m_json["kuaishou.server.web.at"],
+            "sid": "kuaishou.server.web"
+        }
+        res2 = requests.get(self.URL2, headers=self.headers, params=params)
+        content = res2.text
+        # print(content)
+        # "kuaishou.server.web_st" "kuaishou.server.web_ph" 把这两个字段替换掉cookie中，"userId"这个字段一直是没变
+
+        # 切分字符串，检查没有错误。这两个字段不用那么麻烦，把conten转换为json格式提取，这里先不改了
+        tempCont = content.split(",")
+        st = tempCont[1].split(":")[1].replace('"', '')
+        ph = tempCont[3].split(":")[1].replace('"', '')
+
+        cookie_1 = re.sub(r"server.web_st=(.*);", "server.web_st="+st+";", self.theCookie)
+        # print(cookie_1)
+        self.theResult = re.sub(r"web_ph=(.*)", "web_ph=" + ph, cookie_1)
+        # print(theResult)
+        # print(self.theCookie)
+
+
+
+
 if __name__ == "__main__":
     theUserID = "3xriu7h3usw65fu"
     ksUserID = "DD666-com"
     #userdetailLiverCookie = "clientid=3; did=web_ec874916e390b9741609686125a0452e; didv=1613879531823; client_key=65890b29; kpn=GAME_ZONE; userId=427400950; userId=427400950; kuaishou.live.bfb1s=477cb0011daca84b36b3a4676857e5a1; kuaishou.live.web_st=ChRrdWFpc2hvdS5saXZlLndlYi5zdBKgAdzAK_gR4Ij6ikaIFBnhSOQxjHjg4FMAJvD1I-Yb6wkeKkKmy1Y6CHVQVFHo9jkSGfI454cXJaxmHXgE3XD8TcB4HpCEJInTt3sr5OB036DE-W1vQO6_ZNcIcC7FBFZkYcphYw8fcoS7aTlggtrqEg1dZ1-9TWPUQeSV7YuGWRsPTAbyNVdVkRBbGzo05zoRDYpD7h7Sh4VRnVNWGQhehsEaEm-zwBmcbUA4lm5ejQnh9kVjySIgeeee0vVwC8b9JjYLJRhQYNFs4Yg7ugEhW9jEGgDPo_YoBTAB; kuaishou.live.web_ph=9a524ac5ba8b5428550c80f8aa3a8cbbbd98"
     ksCookie = "clientid=3; did=web_a84ab30c11148a28c973b207b8913792; client_key=65890b29; kpn=GAME_ZONE; kuaishou.live.web_st=ChRrdWFpc2hvdS5saXZlLndlYi5zdBKgAaPpEYy-UYx_bkxtnQP7J3TlMsPWnJct2malDdboJd95f6gtrY4f8JsWcPGVjc8Kn524DATADJYAsQvPDzwhc-lqAUIj6JZ1djYndPRyPo79_aoWS5PTn7o5gEnhoVuz2aSsqf9H0vGkzZBUrgGioWgqEOhqYHUdzGd0bTHFXlaY6gTa3pzZEh4dpDZv0mI62yvP36R2dahKdVkOCcED5UoaEvrof_XznEP1qd2QsxhyybtifyIgnqYWGmSnhYUuKU6CH30N4ehu9EWTAZYaxtDzsnZs8YYoBTAB; kuaishou.live.web_ph=823c5ace4afa0a327168389d21c94d243c06; userId=427400950; kuaishou.live.bfb1s=3e261140b0cf7444a0ba411c6f227d88"
-    test = userdetailSpider(theUserID,THECOOKIE)
+    test = updateCookie()
+    test.updateCo()
+    print(test.theCookie)
+    print(test.theResult)
+
+
+
+
+    # test = userdetailSpider(theUserID,THECOOKIE)
     # test = userdetailLiveSpider(ksUserID,KSCOOKIE)
     # print(KSCOOKIE)
     # test = ksLiveSpider(ksUserID,ksCookie)
-    test.start_spider()
-    print(test.endResult)
+    # test.start_spider()
+    # print(test.endResult)
 
     # test = getUserIDRandom(theCookie)
     # test.get_data()
     # print(test.endResult)
+
 
